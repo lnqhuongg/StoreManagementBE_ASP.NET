@@ -13,10 +13,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     )
 );
 
-// ?? ??ng ký Service
+// ?? ??ng kï¿½ Service
 builder.Services.AddScoped<ILoaiSanPhamService, LoaiSanPhamService>();
 
-// ?? Thêm Controllers
+builder.Services.AddScoped<INhanVienService, NhanVienService>();
+
+// ?? Thï¿½m Controllers
 builder.Services.AddControllers();
 
 var app = builder.Build();

@@ -1,0 +1,5 @@
+@base = http://localhost:5224
+
+### Lay tat ca loai san pham
+GET {{base}}/api/loaisanpham
+Accept: application/json

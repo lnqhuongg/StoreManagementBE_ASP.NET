@@ -15,6 +15,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // ?? ??ng ký Service
 builder.Services.AddScoped<ILoaiSanPhamService, LoaiSanPhamService>();
+builder.Services.AddScoped<INhaCungCapService, NhaCungCapService>();
+
 
 // ?? Thêm Controllers
 builder.Services.AddControllers();

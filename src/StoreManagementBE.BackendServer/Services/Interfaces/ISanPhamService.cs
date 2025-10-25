@@ -12,8 +12,13 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
         public bool Update(SanPhamDTO sp);
         public bool UpdateStatus(int id);
         public List<SanPham> searchByKeyword(string keyword);
-        public List<SanPham> getBySupplierID(int supplier_id);
-        public List<SanPham> getByCategoryID(int category_id);
+        public List<SanPham> getBySupplierID(int? supplier_id);
+        public List<SanPham> getByCategoryID(int? category_id);
+        public List<SanPham> getProductsSortByPrice(string? order);
+        public List<SanPham> getProductsBySupplierIDAndCategoryID(int? supplier_id, int? category_id);
+        public List<SanPham> getProductsBySupplierIDAndPrice(int? supplier_id, string? order);
+        public List<SanPham> getProductsByCategoryIDAndPrice(int? category_id, string? order);
+        public List<SanPham> getProductsBysupplierIDAndCategoryIDAndPrice(int? supplier_id, int? category_id, string? order);
 
     }
 }

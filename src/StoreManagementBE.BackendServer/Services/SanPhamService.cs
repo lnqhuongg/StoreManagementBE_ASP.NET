@@ -129,15 +129,76 @@ namespace StoreManagementBE.BackendServer.Services
                 .Where(x => x.product_name.ToLower().Contains(keyword.ToLower()))
                 .ToList();
         }
-        public List<SanPham> getBySupplierID(int supplier_id)
+        public List<SanPham> getBySupplierID(int? supplier_id)
         {
             return _context.SanPhams.Include(sp => sp.Category)
             .Include(sp => sp.Supplier).Where(x => x.supplier_id == supplier_id).ToList();
         }
-        public List<SanPham> getByCategoryID(int category_id)
+        public List<SanPham> getByCategoryID(int? category_id)
         {
             return _context.SanPhams.Include(sp => sp.Category)
             .Include(sp => sp.Supplier).Where(x => x.category_id == category_id).ToList();
+        }
+        public List<SanPham> getProductsSortByPrice(string? order)
+        {
+            var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier);
+            if(order.ToLower() == "desc")
+            {
+                return query.OrderByDescending(sp => sp.price).ToList();
+            }
+            return query.OrderBy(sp => sp.price).ToList();
+        }
+        public List<SanPham> getProductsBySupplierIDAndCategoryID(int? supplier_id, int? category_id)
+        {
+            return _context.SanPhams.Include(sp => sp.Category)
+            .Include(sp => sp.Supplier).Where(x => x.category_id == category_id && x.supplier_id == supplier_id).ToList();
+        }
+        public List<SanPham> getProductsBySupplierIDAndPrice(int? supplier_id, string? order)
+        {
+            var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.supplier_id == supplier_id);
+            if(order != "")
+            {
+                if (order.ToLower() == "desc")
+                {
+                    return query.OrderByDescending(sp => sp.price).ToList();
+                }
+            } else
+            {
+                return query.OrderBy(sp => sp.price).ToList();
+            }
+            
+            return query.OrderBy(sp => sp.price).ToList();
+        }
+        public List<SanPham> getProductsByCategoryIDAndPrice(int? category_id, string? order)
+        {
+            var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.category_id == category_id);
+            if(order != "")
+            {
+                if (order.ToLower() == "desc")
+                {
+                    return query.OrderByDescending(sp => sp.price).ToList();
+                }
+            } else
+            {
+                return query.OrderBy(sp => sp.price).ToList();
+            }
+            
+            return query.OrderBy(sp => sp.price).ToList();
+        }
+        public List<SanPham> getProductsBysupplierIDAndCategoryIDAndPrice(int? supplier_id, int? category_id, string? order)
+        {
+            var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.category_id == category_id && x.supplier_id == supplier_id);
+            if(order != "")
+            {
+                return query.OrderBy(sp => sp.price).ToList();
+            } else
+            {
+                if (order.ToLower() == "desc")
+                {
+                    return query.OrderByDescending(sp => sp.price).ToList();
+                }
+            }
+            return query.OrderBy(sp => sp.price).ToList();
         }
     }
 }

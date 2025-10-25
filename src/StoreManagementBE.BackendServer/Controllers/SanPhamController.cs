@@ -5,6 +5,7 @@ using StoreManagementBE.BackendServer.Helpers;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace StoreManagementBE.BackendServer.Controllers
 {
@@ -280,7 +281,98 @@ namespace StoreManagementBE.BackendServer.Controllers
             {
                 return BadRequest(new
                 {
-                    message = "Lỗi khi tìm sản phẩm theo supplier!",
+                    message = "Lỗi khi tìm sản phẩm theo supplier!" + e.Message,
+                    success = false
+                });
+            }
+        }
+        [HttpGet("sort/{order}")]
+        public IActionResult getProductsSortByPrice([FromRoute]string order)
+        {
+            try
+            {
+                List<SanPham> list = _sanPhamService.getProductsSortByPrice(order);
+                return Ok(new
+                {
+                    message = "Lấy danh sách sản phẩm theo giá " + order + " thành công!",
+                    data = list,
+                    success = true
+                });
+            } catch (Exception e)
+            {
+                return BadRequest(new
+                {
+                    message = "Lỗi " + e.Message,
+                    success = false
+                });
+            }
+        }
+        [HttpGet("advanced_search")]
+        public IActionResult getProudctsBysupplierIDAndCategoryIDAndPrice([FromQuery] int? supplier_id, 
+                                                                        [FromQuery] int? category_id, 
+                                                                        [FromQuery] string? order)
+        {
+            try
+            {
+                List<SanPham> list = [];
+                if(supplier_id.HasValue)
+                {
+                    if(category_id.HasValue)
+                    {
+                        if(order != "")
+                        {
+                            list = _sanPhamService.getProductsBysupplierIDAndCategoryIDAndPrice(supplier_id, category_id, order);
+                        } else
+                        {
+                            list = _sanPhamService.getProductsBySupplierIDAndCategoryID(supplier_id, category_id);
+                        }
+                    } else
+                    {
+                        if (order != "")
+                        {
+                            list = _sanPhamService.getProductsBySupplierIDAndPrice(supplier_id, order);
+                        }
+                        else
+                        {
+                            list = _sanPhamService.getBySupplierID(supplier_id);
+                        }
+                    }
+                } else
+                {
+                    if (category_id.HasValue)
+                    {
+                        if (order != "")
+                        {
+                            list = _sanPhamService.getProductsByCategoryIDAndPrice(category_id, order);
+                        }
+                        else
+                        {
+                            list = _sanPhamService.getByCategoryID(category_id);
+                        }
+                    }
+                    else
+                    {
+                        if (order != "")
+                        {
+                            list = _sanPhamService.getProductsSortByPrice(order);
+                        }
+                        else
+                        {
+                            list = _sanPhamService.GetAll();
+                        }
+                    }
+                }
+                return Ok(new
+                {
+                    message = "Lấy danh sách sản phẩm theo ncc = " + supplier_id + ", lsp = " + category_id + ", giá = " + order + "!",
+                    data = list,
+                    success = true
+                });
+            } catch(Exception e)
+            {
+                return BadRequest(new
+                {
+                    message = e.Message,
                     success = false
                 });
             }

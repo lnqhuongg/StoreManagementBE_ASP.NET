@@ -19,6 +19,7 @@ builder.Services.AddScoped<INhaCungCapService, NhaCungCapService>();
 
 
 builder.Services.AddScoped<INhanVienService, NhanVienService>();
+builder.Services.AddScoped<IPhieuNhapService, PhieuNhapService>();
 
 // ?? Th�m Controllers
 builder.Services.AddControllers();

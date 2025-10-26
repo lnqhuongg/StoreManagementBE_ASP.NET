@@ -1,37 +1,42 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.Models;
+using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
+using AutoMapper;
 
 namespace StoreManagementBE.BackendServer.Services
 {
     public class PhieuNhapService : IPhieuNhapService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public PhieuNhapService(ApplicationDbContext context)
+        public PhieuNhapService(ApplicationDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        public async Task<List<PhieuNhap>> GetAll()
+        public async Task<List<PhieuNhapDTO>> GetAll()
         {
-            return await _context.PhieuNhaps
-                .Include(p => p.Staff)         // nạp luôn thông tin nhân viên
-                .Include(p => p.Supplier)      
+            var list = await _context.PhieuNhaps
+                //.Include(p => p.Staff)         // nạp luôn thông tin nhân viên
+                //.Include(p => p.Supplier)      
                 .Include(p => p.ImportDetails)
                 .ToListAsync();
+            return _mapper.Map<List<PhieuNhapDTO>>(list);
         }
 
-        public async Task<PhieuNhap> GetById(int id)
+        public async Task<PhieuNhapDTO> GetById(int id)
         {
             if (!isExist(id)) return null;
-
-            return await _context.PhieuNhaps
-                .Include(p => p.Staff)
-                .Include(p => p.Supplier)
+            var phieuNhap = await _context.PhieuNhaps
+                //.Include(p => p.Staff)
+                //.Include(p => p.Supplier)
                 .Include(p => p.ImportDetails)
                 .FirstOrDefaultAsync(p => p.import_id == id);
+            return _mapper.Map<PhieuNhapDTO>(phieuNhap);
         }
 
         public bool Create(PhieuNhap phieuNhap)

@@ -31,7 +31,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 return NotFound(new { message = "Không tìm thấy phiếu nhập này!" });
             else
             {
-                System.Console.WriteLine(item.import_id);
+                System.Console.WriteLine(item.Import_id);
             }
                 return Ok(item);
         }

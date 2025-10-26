@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StoreManagementBE.BackendServer.Mappings;
 using StoreManagementBE.BackendServer.Models;
 using StoreManagementBE.BackendServer.Services;
 using StoreManagementBE.BackendServer.Services.Interfaces;
@@ -23,6 +24,8 @@ builder.Services.AddScoped<IPhieuNhapService, PhieuNhapService>();
 
 // ?? Th�m Controllers
 builder.Services.AddControllers();
+
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var app = builder.Build();
 

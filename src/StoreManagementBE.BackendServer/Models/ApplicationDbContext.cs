@@ -13,7 +13,7 @@ namespace StoreManagementBE.BackendServer.Models
         //public DbSet<ChiTietDonHang> ChiTietDonHangs { set; get; }
         //public DbSet<ChiTietPhieuNhap> ChiTietPhieuNhaps { set; get; }
         //public DbSet<DonHang> DonHangs { set; get; }
-        //public DbSet<KhachHang> KhachHangs { set; get; }
+        public DbSet<KhachHang> KhachHangs { set; get; }
         //public DbSet<KhuyenMai> KhuyenMais { set; get; }
         public DbSet<LoaiSanPham> LoaiSanPhams { set; get; }
         //public DbSet<NhaCungCap> NhaCungCaps { set; get; }

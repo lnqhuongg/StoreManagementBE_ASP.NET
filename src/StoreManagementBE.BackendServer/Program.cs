@@ -13,15 +13,27 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     )
 );
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowNextJS",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000") // Next.js dev server
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 // ?? ??ng k� Service
 builder.Services.AddScoped<ILoaiSanPhamService, LoaiSanPhamService>();
 builder.Services.AddScoped<ISanPhamService, SanPhamService>();
 
 // ?? Th�m Controllers
 builder.Services.AddControllers();
-builder.Services.AddControllers();
 
 var app = builder.Build();
+
+app.UseCors("AllowNextJS");
 
 // ?? Middleware
 app.UseHttpsRedirection();
@@ -29,5 +41,6 @@ app.UseAuthorization();
 
 // ?? Map route controllers
 app.MapControllers();
+
 
 app.Run();

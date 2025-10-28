@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using StoreManagementBE.BackendServer.Infrastructure.DI;
+using StoreManagementBE.BackendServer.Mappings;
 using StoreManagementBE.BackendServer.Models;
-using StoreManagementBE.BackendServer.Services;
-using StoreManagementBE.BackendServer.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ?? K?t n?i Database (MySQL)
+// ?? Ket noi Database (MySQL)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -13,10 +13,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     )
 );
 
-// ?? ??ng ký Service
-builder.Services.AddScoped<ILoaiSanPhamService, LoaiSanPhamService>();
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// ?? Thêm Controllers
+// Dang ky tat ca cac service tu folder Infrastructure 
+builder.Services.AddApplicationServices();
+// dang ky controllers tu folder Controllers
 builder.Services.AddControllers();
 
 var app = builder.Build();

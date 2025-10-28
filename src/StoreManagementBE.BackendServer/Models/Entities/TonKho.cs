@@ -3,15 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StoreManagementBE.BackendServer.Models.Entities
 {
-    [Table("payments")]
-    public class ThanhToan
+    [Table("inventory")]
+    public class TonKho
     {
         [Key]
-        public int Payment_id { get; set; }
+        public int Inventory_id { get; set; }
 
         [Required]
-        [ForeignKey("order_id")]
-        public DonHang Order { get; set; }
+        public int Product_id { get; set; }
 
         [Required]
         public int Quantity { get; set; }

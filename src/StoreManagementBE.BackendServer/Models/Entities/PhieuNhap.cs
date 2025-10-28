@@ -7,20 +7,20 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class PhieuNhap
     {
         [Key]
-        public int import_id { get; set; }
+        public int Import_id { get; set; }
 
         [Required]
-        public DateTime import_date { get; set; }
+        public DateTime Import_date { get; set; }
 
         [Required]
-        public int supplier_id { get; set; }
+        public int Supplier_id { get; set; }
 
         [Required]
-        public int user_id { get; set; }
+        public int User_id { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(10,2)")]
-        public decimal total_amount { get; set; }
+        public decimal Total_amount { get; set; }
 
         [ForeignKey("user_id")]
         public NhanVien? Staff { get; set; }

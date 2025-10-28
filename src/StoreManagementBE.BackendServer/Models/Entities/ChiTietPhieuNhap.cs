@@ -8,24 +8,24 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class ChiTietPhieuNhap
     {
         [Key]
-        public int import_detail_id { get; set; }
+        public int Import_detail_id { get; set; }
 
         [Required]
-        public int import_id { get; set; }
+        public int Import_id { get; set; }
 
         [Required]
-        public int product_id { get; set; }
+        public int Product_id { get; set; }
 
         [Required]
-        public int quantity { get; set; }
-
-        [Required]
-        [Column(TypeName = "decimal(10,2)")]
-        public decimal price { get; set; }
+        public int Quantity { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(10,2)")]
-        public decimal subtotal { get; set; }
+        public decimal Price { get; set; }
+
+        [Required]
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal Subtotal { get; set; }
 
         [JsonIgnore]
         [ForeignKey("import_id")]

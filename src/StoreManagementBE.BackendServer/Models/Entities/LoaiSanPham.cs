@@ -9,10 +9,10 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class LoaiSanPham
     {
         [Key] // khóa chính
-        public int category_id { get; set; }
+        public int Category_id { get; set; }
 
         [Required]
         [Column(TypeName = "varchar(100")]
-        public string category_name { get; set; } = "";
+        public string Category_name { get; set; } = "";
     }
 }

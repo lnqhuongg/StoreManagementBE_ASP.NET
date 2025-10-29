@@ -7,26 +7,26 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class NhaCungCap
     {
         [Key] // khóa chính
-        public int supplier_id { get; set; }
+        public int Supplier_id { get; set; }
 
         [Required]
         [Column(TypeName = "varchar(100)")]
-        public string name { get; set; } = "";
+        public string Name { get; set; } = "";
 
         [Required]
         [Column(TypeName = "varchar(20)")]
-        public string phone { get; set; } = "";
+        public string Phone { get; set; } = "";
 
         [Required]
         [Column(TypeName = "varchar(100)")]
-        public string email { get; set; } = "";
+        public string Email { get; set; } = "";
 
         [Required]
         [Column(TypeName = "text")]
-        public string address { get; set; } = "";
+        public string Address { get; set; } = "";
 
         [Required]
         [Column(TypeName = "bit(1)")]
-        public bool status { get; set; }
+        public bool Status { get; set; }
     }
 }

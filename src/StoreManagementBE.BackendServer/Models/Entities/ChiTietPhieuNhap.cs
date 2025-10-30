@@ -8,15 +8,19 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class ChiTietPhieuNhap
     {
         [Key]
-        public int Import_detail_id { get; set; }
+        [Column("import_detail_id")]
+        public int ImportDetailId { get; set; }
 
         [Required]
-        public int Import_id { get; set; }
+        [Column("import_id")]
+        public int ImportId { get; set; }
 
         [Required]
-        public int Product_id { get; set; }
+        [Column("product_id")]
+        public int ProductId { get; set; }
 
         [Required]
+        [Column("quantity")]
         public int Quantity { get; set; }
 
         [Required]
@@ -28,7 +32,7 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         public decimal Subtotal { get; set; }
 
         [JsonIgnore]
-        [ForeignKey("import_id")]
+        [ForeignKey(nameof(ImportId))]
         public PhieuNhap Import { get; set; }
 
     }

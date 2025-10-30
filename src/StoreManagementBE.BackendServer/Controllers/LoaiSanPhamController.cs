@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using StoreManagementBE.BackendServer.DTOs;
-using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
 
 namespace StoreManagementBE.BackendServer.Controllers
@@ -50,7 +49,7 @@ namespace StoreManagementBE.BackendServer.Controllers
             // 1. Validate đầu vào (Data Annotations)
             if (!ModelState.IsValid)
                 return BadRequest(ModelState); // 400
-
+            
             // 2. Gọi Service
             var result = await _loaiSpService.Create(dto);
 

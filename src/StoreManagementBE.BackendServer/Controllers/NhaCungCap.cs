@@ -55,7 +55,7 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] NhaCungCap supplier)
         {
-            supplier.supplier_id = id;
+            supplier.Supplier_id = id;
             var success = _supplierService.Update(supplier);
             if (!success)
                 return NotFound(new { message = "Cập nhật thất bại, không tìm thấy nhà cung cấp!" });

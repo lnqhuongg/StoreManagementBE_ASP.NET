@@ -11,8 +11,9 @@ namespace StoreManagementBE.BackendServer.Mappings
         {
             // entity loaisanpham <-> loaisanphamDTO --- reservemap de map nguoc lai, nghia la tu DTO ve entity
             CreateMap<LoaiSanPham, LoaiSanPhamDTO>().ReverseMap();
-            CreateMap<PhieuNhap, PhieuNhapDTO>();
-            CreateMap<ChiTietPhieuNhap, ChiTietPhieuNhapDTO>();
+            CreateMap<PhieuNhap, PhieuNhapDTO>().ReverseMap();
+            CreateMap<ChiTietPhieuNhap, ChiTietPhieuNhapDTO>().ReverseMap();
+            CreateMap<NhaCungCap, NhaCungCapDTO>().ReverseMap();
         }
     }
 }

@@ -7,9 +7,9 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
     {
         Task<List<PhieuNhapDTO>> GetAll();
         Task<PhieuNhapDTO> GetById(int id);
-        List<PhieuNhap> SearchByKeyword(string keyword);
-        bool Create(PhieuNhap phieuNhap);
-        bool Update(PhieuNhap phieuNhap);
+        List<PhieuNhapDTO> SearchByKeyword(string keyword);
+        Task<PhieuNhapDTO> Create(PhieuNhapDTO phieuNhap);
+        Task<PhieuNhapDTO> Update(PhieuNhapDTO phieuNhap);
         bool Delete(int id);
         bool isExist(int id);
     }

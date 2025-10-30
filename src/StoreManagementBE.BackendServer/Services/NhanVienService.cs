@@ -32,15 +32,15 @@ namespace StoreManagementBE.BackendServer.Services
 
             keyword = keyword.ToLower();
             return _context.NhanViens
-                .Where(x => x.username.ToLower().Contains(keyword) ||
-                            x.full_name.ToLower().Contains(keyword) ||
-                            x.role.ToLower().Contains(keyword))
+                .Where(x => x.Username.ToLower().Contains(keyword) ||
+                            x.Full_name.ToLower().Contains(keyword) ||
+                            x.Role.ToLower().Contains(keyword))
                 .ToList();
         }
 
         public bool Create(NhanVien nhanVien)
         {
-            if (IsUsernameExist(nhanVien.username))
+            if (IsUsernameExist(nhanVien.Username))
                 return false;
 
             try
@@ -57,16 +57,16 @@ namespace StoreManagementBE.BackendServer.Services
 
         public bool Update(NhanVien nhanVien)
         {
-            var existing = _context.NhanViens.Find(nhanVien.user_id);
+            var existing = _context.NhanViens.Find(nhanVien.User_id);
             if (existing == null) return false;
 
-            if (IsUsernameExist(nhanVien.username, nhanVien.user_id))
+            if (IsUsernameExist(nhanVien.Username, nhanVien.User_id))
                 return false;
 
-            existing.username = nhanVien.username;
-            existing.full_name = nhanVien.full_name;
-            existing.role = nhanVien.role;
-            existing.status = nhanVien.status;
+            existing.Username = nhanVien.Username;
+            existing.Full_name = nhanVien.Full_name;
+            existing.Role = nhanVien.Role;
+            existing.Status = nhanVien.Status;
 
             // Không cập nhật password ở đây (nếu cần thì dùng API riêng)
             // existing.password = nhanVien.password;
@@ -91,7 +91,7 @@ namespace StoreManagementBE.BackendServer.Services
         public bool IsUsernameExist(string username, int? excludeId = null)
         {
             return _context.NhanViens
-                .Any(x => x.username == username && (excludeId == null || x.user_id != excludeId));
+                .Any(x => x.Username == username && (excludeId == null || x.User_id != excludeId));
         }
-    }
+    }   
 }

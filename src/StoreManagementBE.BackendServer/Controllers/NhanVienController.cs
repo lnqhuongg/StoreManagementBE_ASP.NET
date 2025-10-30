@@ -46,7 +46,7 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpPost]
         public IActionResult Create([FromBody] NhanVien nhanVien)
         {
-            if (_nhanVienService.IsUsernameExist(nhanVien.username))
+            if (_nhanVienService.IsUsernameExist(nhanVien.Username))
                 return BadRequest(new { message = "Tên đăng nhập đã tồn tại!" });
 
             // Mã hóa mật khẩu (nên dùng BCrypt hoặc Identity)
@@ -63,12 +63,12 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] NhanVien nhanVien)
         {
-            nhanVien.user_id = id;
+            nhanVien.User_id = id;
 
             if (!_nhanVienService.IsExist(id))
                 return NotFound(new { message = "Không tìm thấy nhân viên!" });
 
-            if (_nhanVienService.IsUsernameExist(nhanVien.username, id))
+            if (_nhanVienService.IsUsernameExist(nhanVien.Username, id))
                 return BadRequest(new { message = "Tên đăng nhập đã được sử dụng!" });
 
             var success = _nhanVienService.Update(nhanVien);

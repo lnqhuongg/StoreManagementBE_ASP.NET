@@ -29,7 +29,7 @@ namespace StoreManagementBE.BackendServer.Services
         {
             if (string.IsNullOrEmpty(keyword))
                 return dbContext.NhaCungCaps.ToList();
-            return dbContext.NhaCungCaps.Where(x => x.name.Contains(keyword)).ToList();
+            return dbContext.NhaCungCaps.Where(x => x.Name.Contains(keyword)).ToList();
         }
 
         public bool Create(NhaCungCap ncc)
@@ -48,12 +48,12 @@ namespace StoreManagementBE.BackendServer.Services
 
         public bool Update(NhaCungCap ncc)
         {
-            var Ncc = dbContext.NhaCungCaps.Find(ncc.supplier_id);
+            var Ncc = dbContext.NhaCungCaps.Find(ncc.Supplier_id);
             if (Ncc == null) return false;
 
-            if (isExist(ncc.supplier_id))
+            if (isExist(ncc.Supplier_id))
             {
-                Ncc.name = Ncc.name;
+                Ncc.Name = Ncc.Name;
                 try
                 {
                     dbContext.SaveChanges();

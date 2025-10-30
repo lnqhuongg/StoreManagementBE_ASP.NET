@@ -4,15 +4,17 @@ namespace StoreManagementBE.BackendServer.DTOs
 {
     public class SanPhamDTO
     {
-        public int product_id { get; set; }
+        public int ProductID { get; set; }
+        public int? SupplierID { get; set; }
+        public int? CategoryID { get; set; }
         public LoaiSanPhamDTO Category { get; set; }
         public NhaCungCapDTO Supplier { get; set; }
-        public string product_name { get; set; }
-        public string barcode { get; set; }
-        public decimal price { get; set; }
-        public string unit { get; set; }
-        public DateTime created_at { get; set; }
-        public int status { get; set; }
+        public string ProductName { get; set; }
+        public string Barcode { get; set; }
+        public decimal Price { get; set; }
+        public string Unit { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public int Status { get; set; }
 
     }
 }

@@ -8,11 +8,11 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class SanPham
     {
         [Key]
-        public int product_id { get; set; }
+        public int Product_id { get; set; }
 
         [Column("category_id")]
-        public int? category_id { get; set; }
-        [ForeignKey(nameof(category_id))]
+        public int? Category_id { get; set; }
+        [ForeignKey(nameof(Category_id))]
         public LoaiSanPham? Category { get; set; }
 
         [Column("supplier_id")]
@@ -43,20 +43,20 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         [Column("status", TypeName = "bit(1)")]
         public int status { get; set; }
 
-        public SanPham(int product_id, int? category_id, LoaiSanPham? category, int? supplier_id, NhaCungCap? supplier, string product_name, string barcode, decimal price, UnitEnum unit, DateTime created_at, int status)
-        {
-            this.product_id = product_id;
-            this.category_id = category_id;
-            Category = category;
-            this.supplier_id = supplier_id;
-            Supplier = supplier;
-            this.product_name = product_name;
-            this.barcode = barcode;
-            this.price = price;
-            this.unit = unit;
-            this.created_at = created_at;
-            this.status = status;
-        }
+        //public SanPham(int product_id, int? category_id, LoaiSanPham? category, int? supplier_id, NhaCungCap? supplier, string product_name, string barcode, decimal price, UnitEnum unit, DateTime created_at, int status)
+        //{
+        //    this.product_id = product_id;
+        //    this.category_id = category_id;
+        //    Category = category;
+        //    this.supplier_id = supplier_id;
+        //    Supplier = supplier;
+        //    this.product_name = product_name;
+        //    this.barcode = barcode;
+        //    this.price = price;
+        //    this.unit = unit;
+        //    this.created_at = created_at;
+        //    this.status = status;
+        //}
         public SanPham() { }
     }
 }

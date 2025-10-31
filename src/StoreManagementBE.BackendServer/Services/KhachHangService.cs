@@ -1,3 +1,6 @@
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Models;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
@@ -7,66 +10,123 @@ namespace StoreManagementBE.BackendServer.Services
     public class KhachHangService : IKhachHangService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public KhachHangService(ApplicationDbContext context)
+        public KhachHangService(ApplicationDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        public List<KhachHang> GetAll()
+        // Lấy tất cả khách hàng
+        public async Task<List<KhachHangDTO>> GetAll()
         {
-            return _context.KhachHangs.ToList();
+            var list = await _context.KhachHangs.ToListAsync();
+            return _mapper.Map<List<KhachHangDTO>>(list);
         }
 
-        public KhachHang? GetById(int customer_id)
+        // Lấy khách hàng theo ID
+        public async Task<KhachHangDTO> GetById(int customer_id)
         {
-            return _context.KhachHangs.Find(customer_id);
+            var customer = await _context.KhachHangs.FindAsync(customer_id);
+            return customer == null ? null : _mapper.Map<KhachHangDTO>(customer);
         }
 
+        // Tìm kiếm khách hàng theo keyword (theo tên, sđt, email)
         public List<KhachHang> SearchByKeyword(string keyword)
         {
             if (string.IsNullOrEmpty(keyword))
                 return _context.KhachHangs.ToList();
+
             return _context.KhachHangs
-                .Where(x => x.name.Contains(keyword) || 
-                            x.phone.Contains(keyword) || 
-                            x.email.Contains(keyword))
+                .Where(x => x.Name.Contains(keyword) 
+                            || x.Phone.Contains(keyword) 
+                            || x.Email.Contains(keyword))
                 .ToList();
         }
 
-        public bool Create(KhachHang kh)
+        // Tạo mới khách hàng
+        public async Task<ApiResponse<KhachHangDTO>> Create(KhachHangDTO khachHangDTO)
         {
             try
             {
-                _context.KhachHangs.Add(kh);
-                _context.SaveChanges();
-                return true;
+                var exists = await _context.KhachHangs
+                    .AnyAsync(x => x.Email == khachHangDTO.Email || x.Phone == khachHangDTO.Phone);
+
+                if (exists)
+                {
+                    return new ApiResponse<KhachHangDTO>
+                    {
+                        Success = false,
+                        Message = "Khách hàng đã tồn tại (Email hoặc SĐT trùng)!"
+                    };
+                }
+
+                var entity = _mapper.Map<KhachHang>(khachHangDTO);
+                _context.KhachHangs.Add(entity);
+                await _context.SaveChangesAsync();
+
+                return new ApiResponse<KhachHangDTO>
+                {
+                    Success = true,
+                    Message = "Thêm khách hàng thành công!",
+                    DataDTO = _mapper.Map<KhachHangDTO>(entity)
+                };
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                return new ApiResponse<KhachHangDTO>
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
         }
 
-        public bool Update(KhachHang kh)
+        // Cập nhật khách hàng
+        public async Task<ApiResponse<KhachHangDTO>> Update(int id, KhachHangDTO khachHangDTO)
         {
-            var existing = _context.KhachHangs.Find(kh.customer_id);
-            if (existing == null) return false;
-
-            existing.name = kh.name;
-            existing.phone = kh.phone;
-            existing.email = kh.email;
-            existing.address = kh.address;
-            existing.reward_points = kh.reward_points;
-
             try
             {
-                _context.SaveChanges();
-                return true;
+                var existing = await _context.KhachHangs.FindAsync(id);
+                if (existing == null)
+                {
+                    return new ApiResponse<KhachHangDTO>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy khách hàng để cập nhật!"
+                    };
+                }
+
+                // Update fields
+                existing.Name = khachHangDTO.Name;
+                existing.Phone = khachHangDTO.Phone;
+                existing.Email = khachHangDTO.Email;
+                existing.Address = khachHangDTO.Address;
+
+                _context.KhachHangs.Update(existing);
+                await _context.SaveChangesAsync();
+
+                return new ApiResponse<KhachHangDTO>
+                {
+                    Success = true,
+                    Message = "Cập nhật khách hàng thành công!",
+                    DataDTO = _mapper.Map<KhachHangDTO>(existing)
+                };
             }
-            catch { return false; }
+            catch (Exception ex)
+            {
+                return new ApiResponse<KhachHangDTO>
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
         }
 
-        public bool IsExist(int customer_id)
+        public Task<ApiResponse<bool>> Delete(int customer_id)
         {
-            return _context.KhachHangs.Any(x => x.customer_id == customer_id);
+            throw new NotImplementedException();
         }
     }
 }

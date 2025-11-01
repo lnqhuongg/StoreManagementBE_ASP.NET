@@ -1,13 +1,14 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace StoreManagementBE.BackendServer.Models.Entities
 {
     [Table("customers")]
     public class KhachHang
-    {
-        [Key]
+      {
+        [Key] // khóa chính
         public int Customer_id { get; set; }
 
         [Required]
@@ -24,6 +25,6 @@ namespace StoreManagementBE.BackendServer.Models.Entities
 
         public DateTime? Created_at { get; set; } = DateTime.Now;
 
-        public int Reward_points { get; set; } = 0; 
+        public int Reward_points { get; set; } = 0;
     }
 }

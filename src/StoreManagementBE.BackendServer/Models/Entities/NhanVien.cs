@@ -8,6 +8,7 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class NhanVien
     {
         [Key]
+
         public int User_id { get; set; }
 
         [Required]
@@ -31,5 +32,6 @@ namespace StoreManagementBE.BackendServer.Models.Entities
 
         [Column(TypeName = "tinyint")]
         public byte Status { get; set; } = 1; // 0: khóa, 1: hoạt động
+
     }
 }

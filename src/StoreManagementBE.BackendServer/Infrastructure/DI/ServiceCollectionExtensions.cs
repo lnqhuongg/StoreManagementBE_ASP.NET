@@ -11,6 +11,7 @@ namespace StoreManagementBE.BackendServer.Infrastructure.DI
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             // Đăng ký tất cả service ở đây
+            services.AddScoped<INhanVienService, NhanVienService>();
             services.AddScoped<ILoaiSanPhamService, LoaiSanPhamService>();
             //services.AddScoped<ISanPhamService, SanPhamService>();
             services.AddScoped<IPhieuNhapService, PhieuNhapService>();

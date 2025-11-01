@@ -101,7 +101,7 @@ namespace StoreManagementBE.BackendServer.Services
             try
             {
                 //Kiểm tra đã tồn tại chưa
-                var existed = await _context.NhaCungCaps.FirstOrDefaultAsync(x => x.Supplier_id == id);
+                var existed = await _context.NhaCungCaps.FirstOrDefaultAsync(x => x.SupplierId == id);
                 if (existed == null)
                 {
                     return new ApiResponse<NhaCungCapDTO>
@@ -115,7 +115,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var duplicated = await _context.NhaCungCaps
                     .AnyAsync(x => (x.Name == nhaCungCapDTO.Name
                                 || x.Email == nhaCungCapDTO.Email
-                                || x.Phone == nhaCungCapDTO.Phone) && x.Supplier_id != id);
+                                || x.Phone == nhaCungCapDTO.Phone) && x.SupplierId != id);
                 if (duplicated)
                 {
                     return new ApiResponse<NhaCungCapDTO>

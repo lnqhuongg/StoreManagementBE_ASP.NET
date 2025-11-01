@@ -7,7 +7,8 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class NhaCungCap
     {
         [Key] // khóa chính
-        public int Supplier_id { get; set; }
+        [Column("supplier_id")]
+        public int SupplierId { get; set; }
 
         [Required]
         [Column(TypeName = "varchar(100)")]

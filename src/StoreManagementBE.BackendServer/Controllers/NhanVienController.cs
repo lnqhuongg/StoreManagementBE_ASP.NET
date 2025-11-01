@@ -1,7 +1,7 @@
+// Controllers/NhanVienController.cs
 using Microsoft.AspNetCore.Mvc;
-using StoreManagementBE.BackendServer.Models.Entities;
+using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Services.Interfaces;
-using System.Collections.Generic;
 
 namespace StoreManagementBE.BackendServer.Controllers
 {
@@ -9,74 +9,96 @@ namespace StoreManagementBE.BackendServer.Controllers
     [Route("api/users")]
     public class NhanVienController : ControllerBase
     {
-        private readonly INhanVienService _nhanVienService;
+        private readonly INhanVienService _service;
 
-        public NhanVienController(INhanVienService nhanVienService)
+        public NhanVienController(INhanVienService service)
         {
-            _nhanVienService = nhanVienService;
+            _service = service;
         }
 
-        // GET: api/users
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var list = _nhanVienService.GetAll();
+            var list = await _service.GetAll();
             return Ok(list);
         }
 
-        // GET: api/users/5
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var item = _nhanVienService.GetById(id);
+            var item = await _service.GetById(id);
             if (item == null)
                 return NotFound(new { message = "Không tìm thấy nhân viên!" });
+
             return Ok(item);
         }
 
-        // GET: api/users/search?keyword=admin
         [HttpGet("search")]
         public IActionResult Search([FromQuery] string keyword)
         {
-            var result = _nhanVienService.SearchByKeyword(keyword);
+            var result = _service.SearchByKeyword(keyword);
             return Ok(result);
         }
 
-        // POST: api/users
         [HttpPost]
-        public IActionResult Create([FromBody] NhanVien nhanVien)
+        public async Task<IActionResult> Create([FromBody] NhanVienDTO dto)
         {
-            if (_nhanVienService.IsUsernameExist(nhanVien.username))
-                return BadRequest(new { message = "Tên đăng nhập đã tồn tại!" });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            // Mã hóa mật khẩu (nên dùng BCrypt hoặc Identity)
-            // nhanVien.password = HashPassword(nhanVien.password);
+            var result = await _service.Create(dto);
 
-            var success = _nhanVienService.Create(nhanVien);
-            if (!success)
-                return BadRequest(new { message = "Thêm nhân viên thất bại!" });
+            if (!result.Success)
+            {
+                if (result.Message.Contains("tồn tại"))
+                    return Conflict(new { message = result.Message });
 
-            return Ok(new { message = "Thêm nhân viên thành công!" });
+                return BadRequest(new { message = result.Message });
+            }
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = result.DataDTO!.User_id },
+                result.DataDTO
+            );
         }
 
-        // PUT: api/users/5
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] NhanVien nhanVien)
+        public async Task<IActionResult> Update(int id, [FromBody] NhanVienDTO dto)
         {
-            nhanVien.user_id = id;
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            if (!_nhanVienService.IsExist(id))
-                return NotFound(new { message = "Không tìm thấy nhân viên!" });
+            var result = await _service.Update(id, dto);
 
-            if (_nhanVienService.IsUsernameExist(nhanVien.username, id))
-                return BadRequest(new { message = "Tên đăng nhập đã được sử dụng!" });
+            if (!result.Success)
+            {
+                if (result.Message.Contains("không tìm thấy"))
+                    return NotFound(new { message = result.Message });
 
-            var success = _nhanVienService.Update(nhanVien);
-            if (!success)
-                return BadRequest(new { message = "Cập nhật thất bại!" });
+                if (result.Message.Contains("tồn tại") || result.Message.Contains("sử dụng"))
+                    return Conflict(new { message = result.Message });
 
-            return Ok(new { message = "Cập nhật thành công!" });
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(result.DataDTO);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var result = await _service.Delete(id);
+
+            if (!result.Success)
+            {
+                if (result.Message.Contains("không tìm thấy"))
+                    return NotFound(new { message = result.Message });
+
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(new { message = result.Message });
         }
     }
-
 }

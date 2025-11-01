@@ -1,97 +1,186 @@
+// Services/NhanVienService.cs
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Models;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace StoreManagementBE.BackendServer.Services
 {
     public class NhanVienService : INhanVienService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public NhanVienService(ApplicationDbContext context)
+        public NhanVienService(ApplicationDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        public List<NhanVien> GetAll()
+        public async Task<List<NhanVienDTO>> GetAll()
         {
-            return _context.NhanViens.ToList();
+            var list = await _context.NhanViens.ToListAsync();
+            return _mapper.Map<List<NhanVienDTO>>(list);
         }
 
-        public NhanVien GetById(int user_id)
+        public async Task<NhanVienDTO?> GetById(int user_id)
         {
-            return _context.NhanViens.Find(user_id);
+            var entity = await _context.NhanViens.FindAsync(user_id);
+            return entity == null ? null : _mapper.Map<NhanVienDTO>(entity);
         }
 
-        public List<NhanVien> SearchByKeyword(string keyword)
+        public List<NhanVienDTO> SearchByKeyword(string keyword)
         {
-            if (string.IsNullOrEmpty(keyword))
-                return _context.NhanViens.ToList();
+            IQueryable<NhanVien> query = _context.NhanViens;
 
-            keyword = keyword.ToLower();
-            return _context.NhanViens
-                .Where(x => x.username.ToLower().Contains(keyword) ||
-                            x.full_name.ToLower().Contains(keyword) ||
-                            x.role.ToLower().Contains(keyword))
-                .ToList();
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                keyword = keyword.ToLower();
+                query = query.Where(x =>
+                    x.Username.ToLower().Contains(keyword) ||
+                    x.Full_name.ToLower().Contains(keyword) ||
+                    x.Role.ToLower().Contains(keyword));
+            }
+
+            var result = query.ToList();
+            return _mapper.Map<List<NhanVienDTO>>(result);
         }
 
-        public bool Create(NhanVien nhanVien)
+        public async Task<ApiResponse<NhanVienDTO>> Create(NhanVienDTO dto)
         {
-            if (IsUsernameExist(nhanVien.username))
-                return false;
-
             try
             {
-                _context.NhanViens.Add(nhanVien);
-                _context.SaveChanges();
-                return true;
+                if (await IsUsernameExist(dto.Username))
+                {
+                    return new ApiResponse<NhanVienDTO>
+                    {
+                        Success = false,
+                        Message = "Tên đăng nhập đã tồn tại!"
+                    };
+                }
+
+                var entity = _mapper.Map<NhanVien>(dto);
+                entity.Created_at = DateTime.Now;
+                entity.Status = 1;
+
+                // TODO: Mã hóa mật khẩu trước khi lưu
+                // entity.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+
+                _context.NhanViens.Add(entity);
+                await _context.SaveChangesAsync();
+
+                var resultDto = _mapper.Map<NhanVienDTO>(entity);
+                return new ApiResponse<NhanVienDTO>
+                {
+                    Success = true,
+                    Message = "Thêm nhân viên thành công!",
+                    DataDTO = resultDto
+                };
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse<NhanVienDTO>
+                {
+                    Success = false,
+                    Message = "Lỗi khi thêm nhân viên: " + ex.Message
+                };
             }
         }
 
-        public bool Update(NhanVien nhanVien)
+        public async Task<ApiResponse<NhanVienDTO>> Update(int id, NhanVienDTO dto)
         {
-            var existing = _context.NhanViens.Find(nhanVien.user_id);
-            if (existing == null) return false;
-
-            if (IsUsernameExist(nhanVien.username, nhanVien.user_id))
-                return false;
-
-            existing.username = nhanVien.username;
-            existing.full_name = nhanVien.full_name;
-            existing.role = nhanVien.role;
-            existing.status = nhanVien.status;
-
-            // Không cập nhật password ở đây (nếu cần thì dùng API riêng)
-            // existing.password = nhanVien.password;
-
             try
             {
-                _context.SaveChanges();
-                return true;
+                var existing = await _context.NhanViens.FindAsync(id);
+                if (existing == null)
+                {
+                    return new ApiResponse<NhanVienDTO>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy nhân viên để cập nhật!"
+                    };
+                }
+
+                if (await IsUsernameExist(dto.Username, id))
+                {
+                    return new ApiResponse<NhanVienDTO>
+                    {
+                        Success = false,
+                        Message = "Tên đăng nhập đã được sử dụng bởi tài khoản khác!"
+                    };
+                }
+
+                // Cập nhật các trường
+                existing.Username = dto.Username;
+                existing.Full_name = dto.Full_name;
+                existing.Role = dto.Role;
+                existing.Status = dto.Status;
+
+                // Không cập nhật password ở đây
+                // existing.Created_at giữ nguyên
+
+                await _context.SaveChangesAsync();
+
+                var resultDto = _mapper.Map<NhanVienDTO>(existing);
+                return new ApiResponse<NhanVienDTO>
+                {
+                    Success = true,
+                    Message = "Cập nhật nhân viên thành công!",
+                    DataDTO = resultDto
+                };
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse<NhanVienDTO>
+                {
+                    Success = false,
+                    Message = "Lỗi khi cập nhật: " + ex.Message
+                };
             }
         }
 
-
-        public bool IsExist(int user_id)
+        public async Task<ApiResponse<bool>> Delete(int id)
         {
-            return _context.NhanViens.Find(user_id) != null;
+            try
+            {
+                var existing = await _context.NhanViens.FindAsync(id);
+                if (existing == null)
+                {
+                    return new ApiResponse<bool>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy nhân viên để xóa!",
+                        DataDTO = false
+                    };
+                }
+
+                _context.NhanViens.Remove(existing);
+                await _context.SaveChangesAsync();
+
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = "Xóa nhân viên thành công!",
+                    DataDTO = true
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = "Lỗi khi xóa: " + ex.Message,
+                    DataDTO = false
+                };
+            }
         }
 
-        public bool IsUsernameExist(string username, int? excludeId = null)
+        public async Task<bool> IsUsernameExist(string username, int? excludeId = null)
         {
-            return _context.NhanViens
-                .Any(x => x.username == username && (excludeId == null || x.user_id != excludeId));
+            return await _context.NhanViens
+                .AnyAsync(x => x.Username == username && (excludeId == null || x.User_id != excludeId));
         }
     }
 }

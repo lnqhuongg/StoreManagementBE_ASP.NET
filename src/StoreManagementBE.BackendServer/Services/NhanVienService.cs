@@ -1,4 +1,3 @@
-// Services/NhanVienService.cs
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.DTOs;
@@ -19,40 +18,53 @@ namespace StoreManagementBE.BackendServer.Services
             _mapper = mapper;
         }
 
+        // GET ALL
         public async Task<List<NhanVienDTO>> GetAll()
         {
             var list = await _context.NhanViens.ToListAsync();
-            return _mapper.Map<List<NhanVienDTO>>(list);
+            var dtos = _mapper.Map<List<NhanVienDTO>>(list);
+            dtos.ForEach(dto => dto.Password = ""); // Không trả password
+            return dtos;
         }
 
-        public async Task<NhanVienDTO?> GetById(int user_id)
+        // GET BY ID
+        public async Task<NhanVienDTO?> GetById(int userId)
         {
-            var entity = await _context.NhanViens.FindAsync(user_id);
-            return entity == null ? null : _mapper.Map<NhanVienDTO>(entity);
+            var entity = await _context.NhanViens.FindAsync(userId);
+            if (entity == null) return null;
+
+            var dto = _mapper.Map<NhanVienDTO>(entity);
+            dto.Password = ""; // Không trả password
+            return dto;
         }
 
+        // SEARCH
         public List<NhanVienDTO> SearchByKeyword(string keyword)
         {
             IQueryable<NhanVien> query = _context.NhanViens;
 
-            if (!string.IsNullOrWhiteSpace(keyword))
+            if (!string.IsNullOrEmpty(keyword))
             {
-                keyword = keyword.ToLower();
+                keyword = keyword.Trim().ToLower();
                 query = query.Where(x =>
                     x.Username.ToLower().Contains(keyword) ||
-                    x.Full_name.ToLower().Contains(keyword) ||
+                    x.FullName.ToLower().Contains(keyword) ||
                     x.Role.ToLower().Contains(keyword));
             }
 
             var result = query.ToList();
-            return _mapper.Map<List<NhanVienDTO>>(result);
+            var dtos = _mapper.Map<List<NhanVienDTO>>(result);
+            dtos.ForEach(dto => dto.Password = "");
+            return dtos;
         }
 
+        // CREATE
         public async Task<ApiResponse<NhanVienDTO>> Create(NhanVienDTO dto)
         {
             try
             {
-                if (await IsUsernameExist(dto.Username))
+                var exists = await _context.NhanViens.AnyAsync(x => x.Username == dto.Username);
+                if (exists)
                 {
                     return new ApiResponse<NhanVienDTO>
                     {
@@ -62,16 +74,18 @@ namespace StoreManagementBE.BackendServer.Services
                 }
 
                 var entity = _mapper.Map<NhanVien>(dto);
-                entity.Created_at = DateTime.Now;
+                entity.CreatedAt = DateTime.Now;
                 entity.Status = 1;
 
-                // TODO: Mã hóa mật khẩu trước khi lưu
+                // TODO: Hash password
                 // entity.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
                 _context.NhanViens.Add(entity);
                 await _context.SaveChangesAsync();
 
                 var resultDto = _mapper.Map<NhanVienDTO>(entity);
+                resultDto.Password = ""; // Không trả password
+
                 return new ApiResponse<NhanVienDTO>
                 {
                     Success = true,
@@ -84,11 +98,12 @@ namespace StoreManagementBE.BackendServer.Services
                 return new ApiResponse<NhanVienDTO>
                 {
                     Success = false,
-                    Message = "Lỗi khi thêm nhân viên: " + ex.Message
+                    Message = ex.Message
                 };
             }
         }
 
+        // UPDATE
         public async Task<ApiResponse<NhanVienDTO>> Update(int id, NhanVienDTO dto)
         {
             try
@@ -103,7 +118,8 @@ namespace StoreManagementBE.BackendServer.Services
                     };
                 }
 
-                if (await IsUsernameExist(dto.Username, id))
+                // Kiểm tra username trùng (ngoại trừ chính nó)
+                if (dto.Username != existing.Username && await IsUsernameExist(dto.Username))
                 {
                     return new ApiResponse<NhanVienDTO>
                     {
@@ -114,16 +130,17 @@ namespace StoreManagementBE.BackendServer.Services
 
                 // Cập nhật các trường
                 existing.Username = dto.Username;
-                existing.Full_name = dto.Full_name;
+                existing.FullName = dto.FullName;
                 existing.Role = dto.Role;
                 existing.Status = dto.Status;
+                // Không cập nhật Password
 
-                // Không cập nhật password ở đây
-                // existing.Created_at giữ nguyên
-
+                _context.NhanViens.Update(existing);
                 await _context.SaveChangesAsync();
 
                 var resultDto = _mapper.Map<NhanVienDTO>(existing);
+                resultDto.Password = "";
+
                 return new ApiResponse<NhanVienDTO>
                 {
                     Success = true,
@@ -136,11 +153,12 @@ namespace StoreManagementBE.BackendServer.Services
                 return new ApiResponse<NhanVienDTO>
                 {
                     Success = false,
-                    Message = "Lỗi khi cập nhật: " + ex.Message
+                    Message = ex.Message
                 };
             }
         }
 
+        // DELETE
         public async Task<ApiResponse<bool>> Delete(int id)
         {
             try
@@ -171,16 +189,16 @@ namespace StoreManagementBE.BackendServer.Services
                 return new ApiResponse<bool>
                 {
                     Success = false,
-                    Message = "Lỗi khi xóa: " + ex.Message,
+                    Message = ex.Message,
                     DataDTO = false
                 };
             }
         }
 
-        public async Task<bool> IsUsernameExist(string username, int? excludeId = null)
+        // HELPER: Kiểm tra username tồn tại
+        private async Task<bool> IsUsernameExist(string username)
         {
-            return await _context.NhanViens
-                .AnyAsync(x => x.Username == username && (excludeId == null || x.User_id != excludeId));
+            return await _context.NhanViens.AnyAsync(x => x.Username == username);
         }
     }
 }

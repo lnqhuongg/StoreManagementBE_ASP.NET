@@ -8,30 +8,29 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class NhanVien
     {
         [Key]
-
-        public int User_id { get; set; }
+        [Column("user_id")]
+        public int UserId { get; set; }
 
         [Required]
-        [Column(TypeName = "varchar(50)")]
+        [Column("username", TypeName = "varchar(50)")]
         public string Username { get; set; } = "";
 
         [Required]
-        [Column(TypeName = "varchar(255)")]
+        [Column("password", TypeName = "varchar(255)")]
         public string Password { get; set; } = "";
 
         [Required]
-        [Column(TypeName = "nvarchar(100)")]
-        public string Full_name { get; set; } = "";
+        [Column("full_name", TypeName = "nvarchar(100)")]
+        public string FullName { get; set; } = "";
 
         [Required]
-        [Column(TypeName = "varchar(20)")]
+        [Column("role", TypeName = "varchar(20)")]
         public string Role { get; set; } = "staff"; // admin, staff
 
-        [Column(TypeName = "datetime")]
-        public DateTime Created_at { get; set; } = DateTime.Now;
+        [Column("created_at", TypeName = "datetime")]
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        [Column(TypeName = "tinyint")]
+        [Column("status", TypeName = "tinyint")]
         public byte Status { get; set; } = 1; // 0: khóa, 1: hoạt động
-
     }
 }

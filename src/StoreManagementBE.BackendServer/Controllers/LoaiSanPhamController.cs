@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.DTOs;
-using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 

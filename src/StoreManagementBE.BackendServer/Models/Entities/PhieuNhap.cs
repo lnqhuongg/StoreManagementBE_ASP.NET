@@ -13,12 +13,12 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         [Required]
         [Column("import_date")]
         public DateTime ImportDate { get; set; }
-
-        [Required(ErrorMessage = "Nhà cung cấp không được trống")]
+        
+        [Required]
         [Column("supplier_id")]
         public int SupplierId { get; set; }
 
-        [Required(ErrorMessage = "Nhân viên không được trống")]
+        [Required]
         [Column("user_id")]
         public int UserId { get; set; }
 

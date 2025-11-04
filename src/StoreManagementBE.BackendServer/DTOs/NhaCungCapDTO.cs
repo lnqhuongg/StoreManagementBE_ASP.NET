@@ -7,6 +7,6 @@
         public string Phone { get; set; }
         public string Email { get; set; }
         public string Address { get; set; }
-        public int Status { get; set; } = 0;
+        public bool Status { get; set; }
     }
 }

@@ -1,5 +1,3 @@
-﻿// BackendServer/DTOs/NhanVienDTO.cs
-
 namespace StoreManagementBE.BackendServer.DTOs
 {
     public class NhanVienDTO
@@ -8,7 +6,7 @@ namespace StoreManagementBE.BackendServer.DTOs
         public string Username { get; set; } = "";
         public string Password { get; set; } = "";
         public string FullName { get; set; } = "";
-        public string Role { get; set; }
+        public string Role { get; set; } = "staff";
         public DateTime CreatedAt { get; set; }
         public byte Status { get; set; } = 1;
     }

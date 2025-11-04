@@ -4,9 +4,9 @@ namespace StoreManagementBE.BackendServer.DTOs
 {
     public class SanPhamDTO
     {
-        public int ProductId { get; set; }
-        public int? SupplierId { get; set; }
-        public int? CategoryId { get; set; }
+        public int ProductID { get; set; }
+        public int? SupplierID { get; set; }
+        public int? CategoryID { get; set; }
         public LoaiSanPhamDTO Category { get; set; }
         public NhaCungCapDTO Supplier { get; set; }
         public string ProductName { get; set; }
@@ -15,5 +15,6 @@ namespace StoreManagementBE.BackendServer.DTOs
         public string Unit { get; set; }
         public DateTime CreatedAt { get; set; }
         public int Status { get; set; }
+
     }
 }

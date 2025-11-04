@@ -41,8 +41,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 {
                     return NoContent();
                 }
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 return BadRequest(new ApiResponse<SanPhamDTO>
                 {
@@ -55,7 +54,7 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-
+            
             try
             {
                 var sp = await _sanPhamService.GetById(id);
@@ -76,8 +75,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                         Success = false
                     });
                 }
-            }
-            catch (Exception e)
+            } catch(Exception e)
             {
                 return BadRequest(new ApiResponse<SanPhamDTO>
                 {
@@ -91,14 +89,14 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] SanPhamDTO sp)
         {
-
+            
             try
             {
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
                 }
-                if (await _sanPhamService.checkExistBarcode(sp.Barcode) || await _sanPhamService.checkExistID(sp.ProductId))
+                if (await _sanPhamService.checkExistBarcode(sp.Barcode) || await _sanPhamService.checkExistID(sp.ProductID))
                 {
                     return Conflict(new ApiResponse<SanPhamDTO>
                     {
@@ -108,14 +106,12 @@ namespace StoreManagementBE.BackendServer.Controllers
                 }
 
                 var newSP = await _sanPhamService.Create(sp);
-                return CreatedAtAction("Created products success!", new ApiResponse<SanPhamDTO>
-                {
+                return CreatedAtAction("Created products success!", new ApiResponse<SanPhamDTO> {
                     Message = "Thêm sản phẩm thành công!",
                     DataDTO = newSP,
                     Success = true
                 });
-            }
-            catch (Exception e)
+            } catch(Exception e)
             {
                 return BadRequest(new ApiResponse<SanPhamDTO>
                 {
@@ -127,7 +123,7 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] SanPhamDTO sp)
         {
-
+            
             try
             {
                 if (await _sanPhamService.checkExistBarcode(sp.Barcode) == false || await _sanPhamService.checkExistID(id) == false)
@@ -146,8 +142,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                     DataDTO = updateSP,
                     Success = true
                 });
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 return BadRequest(new ApiResponse<SanPhamDTO>
                 {
@@ -166,7 +161,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 {
                     return BadRequest(ModelState);
                 }
-                if (await _sanPhamService.checkExistID(id) == false)
+                if(await _sanPhamService.checkExistID(id) == false)
                 {
                     return NotFound(new ApiResponse<SanPhamDTO>
                     {
@@ -221,7 +216,7 @@ namespace StoreManagementBE.BackendServer.Controllers
             {
                 var list = _sanPhamService.searchByKeyword(keyword);
                 List<SanPhamDTO> ls = await list;
-                if (ls.Count > 0)
+                if(ls.Count > 0)
                 {
                     return Ok(new ApiResponse<List<SanPhamDTO>>
                     {
@@ -229,13 +224,11 @@ namespace StoreManagementBE.BackendServer.Controllers
                         Success = true,
                         DataDTO = ls
                     });
-                }
-                else
+                } else
                 {
                     return NoContent();
                 }
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 return BadRequest(new ApiResponse<SanPhamDTO>
                 {
@@ -305,7 +298,7 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
         [HttpGet("sort/{order}")]
-        public async Task<IActionResult> getProductsSortByPrice([FromRoute] string order)
+        public async Task<IActionResult> getProductsSortByPrice([FromRoute]string order)
         {
             try
             {
@@ -316,8 +309,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                     DataDTO = list,
                     Success = true
                 });
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 return BadRequest(new ApiResponse<SanPhamDTO>
                 {
@@ -327,27 +319,25 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
         [HttpGet("advanced_search")]
-        public async Task<IActionResult> getProudctsBysupplierIDAndCategoryIDAndPrice([FromQuery] int? supplier_id,
-                                                                        [FromQuery] int? category_id,
+        public async Task<IActionResult> getProudctsBysupplierIDAndCategoryIDAndPrice([FromQuery] int? supplier_id, 
+                                                                        [FromQuery] int? category_id, 
                                                                         [FromQuery] string? order)
         {
             try
             {
                 var list = new List<SanPhamDTO>(); ;
-                if (supplier_id.HasValue)
+                if(supplier_id.HasValue)
                 {
-                    if (category_id.HasValue)
+                    if(category_id.HasValue)
                     {
-                        if (order != "")
+                        if(order != "")
                         {
                             list = await _sanPhamService.getProductsBysupplierIDAndCategoryIDAndPrice(supplier_id, category_id, order);
-                        }
-                        else
+                        } else
                         {
                             list = await _sanPhamService.getProductsBySupplierIDAndCategoryID(supplier_id, category_id);
                         }
-                    }
-                    else
+                    } else
                     {
                         if (order != "")
                         {
@@ -358,8 +348,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                             list = await _sanPhamService.getBySupplierID(supplier_id);
                         }
                     }
-                }
-                else
+                } else
                 {
                     if (category_id.HasValue)
                     {
@@ -390,8 +379,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                     DataDTO = list,
                     Success = true
                 });
-            }
-            catch (Exception e)
+            } catch(Exception e)
             {
                 return BadRequest(new ApiResponse<SanPhamDTO>
                 {

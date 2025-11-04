@@ -1,4 +1,3 @@
-// Controllers/NhanVienController.cs
 using Microsoft.AspNetCore.Mvc;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Services.Interfaces;
@@ -16,13 +15,15 @@ namespace StoreManagementBE.BackendServer.Controllers
             _service = service;
         }
 
+        // GET: api/users
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var list = await _service.GetAll();
-            return Ok(list);
+            return Ok(list); // 200 OK
         }
 
+        // GET: api/users/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -33,6 +34,7 @@ namespace StoreManagementBE.BackendServer.Controllers
             return Ok(item);
         }
 
+        // GET: api/users/search?keyword=admin
         [HttpGet("search")]
         public IActionResult Search([FromQuery] string keyword)
         {
@@ -40,29 +42,36 @@ namespace StoreManagementBE.BackendServer.Controllers
             return Ok(result);
         }
 
+        // POST: api/users
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] NhanVienDTO dto)
         {
+            // 1. Validate đầu vào
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(ModelState); // 400
 
+            // 2. Gọi Service
             var result = await _service.Create(dto);
 
+            // 3. Xử lý kết quả
             if (!result.Success)
             {
                 if (result.Message.Contains("tồn tại"))
-                    return Conflict(new { message = result.Message });
+                    return Conflict(new { message = result.Message }); // 409
 
-                return BadRequest(new { message = result.Message });
+                return BadRequest(new { message = result.Message }); // 400
             }
 
+            // 4. Thành công → 201 Created
+            var resultDto = result.DataDTO;
             return CreatedAtAction(
                 nameof(GetById),
-                new { id = result.DataDTO!.UserId},
-                result.DataDTO
+                new { id = resultDto!.UserId },  // Dùng UserId
+                resultDto
             );
         }
 
+        // PUT: api/users/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] NhanVienDTO dto)
         {
@@ -73,7 +82,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 
             if (!result.Success)
             {
-                if (result.Message.Contains("không tìm thấy"))
+                if (result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
                     return NotFound(new { message = result.Message });
 
                 if (result.Message.Contains("tồn tại") || result.Message.Contains("sử dụng"))
@@ -83,22 +92,6 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
 
             return Ok(result.DataDTO);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var result = await _service.Delete(id);
-
-            if (!result.Success)
-            {
-                if (result.Message.Contains("không tìm thấy"))
-                    return NotFound(new { message = result.Message });
-
-                return BadRequest(new { message = result.Message });
-            }
-
-            return Ok(new { message = result.Message });
         }
     }
 }

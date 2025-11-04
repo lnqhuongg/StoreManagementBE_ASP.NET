@@ -32,6 +32,5 @@ namespace StoreManagementBE.BackendServer.Models.Entities
 
         [Column("status", TypeName = "tinyint")]
         public byte Status { get; set; } = 1; // 0: khóa, 1: hoạt động
-
     }
 }

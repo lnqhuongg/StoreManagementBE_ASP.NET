@@ -13,13 +13,18 @@ namespace StoreManagementBE.BackendServer.Mappings
             CreateMap<LoaiSanPham, LoaiSanPhamDTO>().ReverseMap();
             CreateMap<PhieuNhap, PhieuNhapDTO>().ReverseMap();
             CreateMap<ChiTietPhieuNhap, ChiTietPhieuNhapDTO>().ReverseMap();
-            CreateMap<NhaCungCap, NhaCungCapDTO>().ReverseMap();
 
             // entity nhacungcap <-> nhacungcapDTO
             CreateMap<NhaCungCap, NhaCungCapDTO>().ReverseMap();
 
             // entity nhanvien <-> nhanvienDTO
             CreateMap<NhanVien, NhanVienDTO>().ReverseMap();
+
+            // entity sanpham <-> sanphamDTO
+            CreateMap<SanPham, SanPhamDTO>().ReverseMap();
+
+            // entity nhacungcap <-> nhacungcapDTO
+            CreateMap<NhaCungCap, NhaCungCapDTO>().ReverseMap();
         }
     }
 }

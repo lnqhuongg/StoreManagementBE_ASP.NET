@@ -7,15 +7,22 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     [Table("order_items")]
     public class ChiTietDonHang
     {
-        [Key][Column("order_item_id")] public int OrderItemId { get; set; }
-        [Column("order_id")] public int? OrderId { get; set; }
-        [Column("product_id")] public int? ProductId { get; set; }
-        [Column("quantity")] public int Quantity { get; set; }
-        [Column("price")] public decimal Price { get; set; }
-        [Column("subtotal")] public decimal Subtotal { get; set; }
+        [Key]
+        [Column("order_item_id")] 
+        public int OrderItemId { get; set; }
+        [Column("order_id")] 
+        public int? OrderId { get; set; }
+        [Column("product_id")] 
+        public int? ProductId { get; set; }
+        [Column("quantity")] 
+        public int Quantity { get; set; }
+        [Column("price")] 
+        public decimal Price { get; set; }
+        [Column("subtotal")] 
+        public decimal Subtotal { get; set; }
 
         [ForeignKey(nameof(OrderId))]
-        [JsonIgnore]                 // <- chặn vòng ở đây
+        [JsonIgnore]                 
         public DonHang? Order { get; set; }
     }
 }

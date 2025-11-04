@@ -1,29 +1,34 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace StoreManagementBE.BackendServer.Models.Entities
 {
     [Table("customers")]
     public class KhachHang
     {
-        [Key]
-        public int Customer_id { get; set; }
+        [Key] // khóa chính
+        [Column("customer_id")]
+        public int CustomerId { get; set; }
 
         [Required]
-        [Column(TypeName = "varchar(100)")]
+        [Column("name", TypeName = "varchar(100)")]
         public string Name { get; set; } = "";
 
-        [Column(TypeName = "varchar(20)")]
+        [Column("phone", TypeName = "varchar(20)")]
         public string? Phone { get; set; }
 
-        [Column(TypeName = "varchar(100)")]
+        [Column("email", TypeName = "varchar(100)")]
         public string? Email { get; set; }
 
+        [Column("address")]
         public string? Address { get; set; }
 
-        public DateTime? Created_at { get; set; } = DateTime.Now;
+        [Column("created_at", TypeName = "datetime")]
+        public DateTime? CreatedAt { get; set; } = DateTime.Now;
 
-        public int Reward_points { get; set; } = 0; 
+        [Column("reward_points", TypeName = "int")]
+        public int RewardPoints { get; set; } = 0;
     }
 }

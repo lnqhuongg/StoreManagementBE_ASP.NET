@@ -17,4 +17,4 @@ namespace StoreManagementBE.BackendServer.DTOs
 
         public List<ChiTietPhieuNhapDTO>? ImportDetails { get; set; }
     }
-}   
+}

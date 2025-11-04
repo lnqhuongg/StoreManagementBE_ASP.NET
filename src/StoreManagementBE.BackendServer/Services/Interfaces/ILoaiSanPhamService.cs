@@ -8,8 +8,10 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
         Task<List<LoaiSanPhamDTO>> GetAll();
         Task<LoaiSanPhamDTO> GetById(int category_id);
         List<LoaiSanPham> SearchByKeyword(string keyword);
-        Task<ApiResponse<LoaiSanPhamDTO>> Create(LoaiSanPhamDTO loaiSanPhamDTO);
-        Task<ApiResponse<LoaiSanPhamDTO>> Update(int id, LoaiSanPhamDTO loaiSanPhamDTO);
-        Task<ApiResponse<bool>> Delete(int category_id);
+        Task<LoaiSanPhamDTO> Create(LoaiSanPhamDTO loaiSanPhamDTO);
+        Task<LoaiSanPhamDTO> Update(int id, LoaiSanPhamDTO loaiSanPhamDTO);
+        Task<bool> isCategoryNameExist(string category_name);
+        Task<bool> isCategoryExist(int category_id);
+        bool Delete(int category_id);
     }
 }

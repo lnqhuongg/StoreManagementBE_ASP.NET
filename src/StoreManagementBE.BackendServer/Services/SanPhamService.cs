@@ -27,8 +27,7 @@ namespace StoreManagementBE.BackendServer.Services
             {
                 var list = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(list);
-            }
-            catch (Exception e)
+            } catch(Exception e)
             {
                 throw new Exception("Lỗi khi lấy danh sách sản phẩm: " + e.Message);
             }
@@ -37,10 +36,9 @@ namespace StoreManagementBE.BackendServer.Services
         {
             try
             {
-                var sp = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).FirstOrDefaultAsync(x => x.ProductId == id);
+                var sp = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).FirstOrDefaultAsync(x => x.ProductID == id);
                 return _mapper.Map<SanPhamDTO>(sp);
-            }
-            catch (Exception e)
+            } catch(Exception e)
             {
                 throw new Exception("Lỗi khi lấy sản phẩm theo ID: " + e.Message);
             }
@@ -57,7 +55,7 @@ namespace StoreManagementBE.BackendServer.Services
         public async Task<bool> checkExistID(int ID)
         {
             bool exists = await _context.SanPhams
-                .AnyAsync(x => x.ProductId == ID);
+                .AnyAsync(x => x.ProductID == ID);
 
             return exists;
         }
@@ -66,7 +64,7 @@ namespace StoreManagementBE.BackendServer.Services
         {
             try
             {
-
+                
                 // Tạo entity sản phẩm mới
                 SanPham sanpham = new SanPham
                 {
@@ -77,8 +75,8 @@ namespace StoreManagementBE.BackendServer.Services
                     CreatedAt = DateTime.Now,
                     Status = sp.Status,
 
-                    CategoryId = sp.Category?.CategoryId,
-                    SupplierId = sp.Supplier?.SupplierId,
+                    CategoryID = sp.Category?.Category_id,
+                    SupplierID = sp.Supplier?.supplier_id,
                 };
 
 
@@ -89,7 +87,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var createdProduct = await _context.SanPhams
                     .Include(x => x.Category)
                     .Include(x => x.Supplier)
-                    .FirstOrDefaultAsync(x => x.ProductId == sanpham.ProductId);
+                    .FirstOrDefaultAsync(x => x.ProductID == sanpham.ProductID);
 
                 var resultDTO = _mapper.Map<SanPhamDTO>(createdProduct);
 
@@ -106,10 +104,10 @@ namespace StoreManagementBE.BackendServer.Services
             try
             {
                 var sanpham = await _context.SanPhams
-                    .FirstOrDefaultAsync(x => x.ProductId == id);
+                    .FirstOrDefaultAsync(x => x.ProductID == id);
 
-
-                if (sanpham != null)
+                
+                if(sanpham!= null)
                 {
                     _context.SanPhams.Remove(sanpham);
 
@@ -131,12 +129,12 @@ namespace StoreManagementBE.BackendServer.Services
             {
                 // SỬA: Thêm await
                 var existingProduct = await _context.SanPhams
-                    .FirstOrDefaultAsync(x => x.ProductId == sp.ProductId);
+                    .FirstOrDefaultAsync(x => x.ProductID == sp.ProductID);
 
                 if (existingProduct == null)
                     return null;
 
-
+                
 
                 // QUAN TRỌNG: Update từng property thay vì dùng AutoMapper
                 existingProduct.ProductName = sp.ProductName;
@@ -146,8 +144,8 @@ namespace StoreManagementBE.BackendServer.Services
                 existingProduct.Status = sp.Status;
 
                 // CHỈ update ID, không update navigation objects
-                existingProduct.CategoryId = sp.Category?.CategoryId;
-                existingProduct.SupplierId = sp.Supplier?.SupplierId;
+                existingProduct.CategoryID = sp.Category?.Category_id;
+                existingProduct.SupplierID = sp.Supplier?.supplier_id;
 
                 // KHÔNG cần gọi Update() vì Entity Framework đang track entity
                 await _context.SaveChangesAsync();
@@ -156,7 +154,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var updatedProduct = await _context.SanPhams
                     .Include(x => x.Category)
                     .Include(x => x.Supplier)
-                    .FirstOrDefaultAsync(x => x.ProductId == sp.ProductId);
+                    .FirstOrDefaultAsync(x => x.ProductID == sp.ProductID);
 
                 var resultDTO = _mapper.Map<SanPhamDTO>(updatedProduct);
 
@@ -217,10 +215,9 @@ namespace StoreManagementBE.BackendServer.Services
             try
             {
                 var list = await _context.SanPhams.Include(sp => sp.Category)
-                .Include(sp => sp.Supplier).Where(x => x.SupplierId == supplier_id).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(list);
-            }
-            catch (Exception e)
+                .Include(sp => sp.Supplier).Where(x => x.SupplierID == supplier_id).ToListAsync();
+                    return _mapper.Map<List<SanPhamDTO>>(list);
+            } catch (Exception e)
             {
                 throw new Exception("Lỗi khi tìm sản phẩm theo nhà cung cấp: " + e.Message);
             }
@@ -230,10 +227,9 @@ namespace StoreManagementBE.BackendServer.Services
             try
             {
                 var list = await _context.SanPhams.Include(sp => sp.Category)
-                .Include(sp => sp.Supplier).Where(x => x.CategoryId == category_id).ToListAsync();
+                .Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id).ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(list);
-            }
-            catch (Exception e)
+            } catch(Exception e)
             {
                 throw new Exception("Lỗi khi tìm sản phẩm theo loại: " + e.Message);
             }
@@ -250,8 +246,7 @@ namespace StoreManagementBE.BackendServer.Services
                 }
                 var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(ls);
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 throw new Exception("Lỗi khi lấy danh sách sắp xếp theo yêu cầu: " + e.Message);
             }
@@ -261,10 +256,9 @@ namespace StoreManagementBE.BackendServer.Services
             try
             {
                 var ls = await _context.SanPhams.Include(sp => sp.Category)
-            .Include(sp => sp.Supplier).Where(x => x.CategoryId == category_id && x.SupplierId == supplier_id).ToListAsync();
+            .Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id && x.SupplierID == supplier_id).ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(ls);
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 throw new Exception("Lỗi khi tìm sản phẩm theo nhà cung cấp và loại: " + e.Message);
             }
@@ -273,7 +267,7 @@ namespace StoreManagementBE.BackendServer.Services
         {
             try
             {
-                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.SupplierId == supplier_id);
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.SupplierID == supplier_id);
                 if (order != "")
                 {
                     if (order.ToLower() == "desc")
@@ -290,8 +284,7 @@ namespace StoreManagementBE.BackendServer.Services
 
                 var list = await query.OrderBy(sp => sp.Price).ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(list);
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 throw new Exception("Lỗi khi lấy danh sách sản phẩm sắp xếp theo nhà cung cấp: " + e.Message);
             }
@@ -300,7 +293,7 @@ namespace StoreManagementBE.BackendServer.Services
         {
             try
             {
-                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryId == category_id);
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id);
                 if (order != "")
                 {
                     if (order.ToLower() == "desc")
@@ -317,8 +310,7 @@ namespace StoreManagementBE.BackendServer.Services
 
                 var list = await query.OrderBy(sp => sp.Price).ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(list);
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 throw new Exception("Lỗi khi lấy danh sách sản phẩm theo yêu cầu và loại: " + e.Message);
             }
@@ -327,7 +319,7 @@ namespace StoreManagementBE.BackendServer.Services
         {
             try
             {
-                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryId == category_id && x.SupplierId == supplier_id);
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id && x.SupplierID == supplier_id);
                 if (order != "")
                 {
                     var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
@@ -343,8 +335,7 @@ namespace StoreManagementBE.BackendServer.Services
                 }
                 var list = await query.OrderBy(sp => sp.Price).ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(list);
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 throw new Exception("Lỗi khi lấy danh sách sản phẩm theo yêu cầu, nhà cung cấp, loại: " + e.Message);
             }

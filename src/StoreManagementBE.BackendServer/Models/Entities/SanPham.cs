@@ -9,16 +9,16 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     {
         [Key]
         [Column("product_id")]
-        public int ProductId { get; set; }
+        public int ProductID { get; set; }
 
         [Column("category_id")]
-        public int? CategoryId { get; set; }
-        [ForeignKey(nameof(CategoryId))]
+        public int? CategoryID { get; set; }
+        [ForeignKey(nameof(CategoryID))]
         public LoaiSanPham? Category { get; set; }
 
         [Column("supplier_id")]
-        public int? SupplierId { get; set; }
-        [ForeignKey(nameof(SupplierId))]
+        public int? SupplierID { get; set; }
+        [ForeignKey(nameof(SupplierID))]
         public NhaCungCap? Supplier { get; set; }
 
         [Required(ErrorMessage = "Tên sản phẩm là bắt buộc!")]
@@ -43,5 +43,21 @@ namespace StoreManagementBE.BackendServer.Models.Entities
 
         [Column("status", TypeName = "bit(1)")]
         public int Status { get; set; }
+
+        //public SanPham(int product_id, int? category_id, LoaiSanPham? category, int? supplier_id, NhaCungCap? supplier, string product_name, string barcode, decimal price, UnitEnum unit, DateTime created_at, int status)
+        //{
+        //    this.product_id = product_id;
+        //    this.category_id = category_id;
+        //    Category = category;
+        //    this.supplier_id = supplier_id;
+        //    Supplier = supplier;
+        //    this.product_name = product_name;
+        //    this.barcode = barcode;
+        //    this.price = price;
+        //    this.unit = unit;
+        //    this.created_at = created_at;
+        //    this.status = status;
+        //}
+        public SanPham() { }
     }
 }

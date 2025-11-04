@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace StoreManagementBE.BackendServer.Controllers
 {
@@ -18,95 +20,179 @@ namespace StoreManagementBE.BackendServer.Controllers
             _loaiSpService = loaiSpService;
         }
 
+        // lay tat ca
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var list = await _loaiSpService.GetAll();
-            return Ok(list); // tra ve status 200
+            try
+            {
+                var list = await _loaiSpService.GetAll();
+                if (list.Count > 0)
+                {
+                    var api = new ApiResponse<List<LoaiSanPhamDTO>>
+                    {
+                        Message = "Lấy danh sách sản phẩm thành công!",
+                        DataDTO = list,
+                        Success = true
+                    };
+                    return Ok(api);
+                }
+                else return NoContent();
+            } 
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = ex.Message,
+                    Success = false
+                });
+            }
         }
 
-        // ✅ GET: api/categories/{id}
+        // lay theo id
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var item = await _loaiSpService.GetById(id);
-            if (item == null)
-                return NotFound(new { message = "Không tìm thấy loại sản phẩm này!" });
-            return Ok(item);
-        }
-
-        // ✅ GET: api/categories/search?keyword=TV
-        [HttpGet("search")]
-        public IActionResult Search([FromQuery] string keyword)
-        {
-            var result = _loaiSpService.SearchByKeyword(keyword);
-            return Ok(result);
-        }
-
-        // POST: api/categories
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] LoaiSanPhamDTO dto)
-        {
-            // 1. Validate đầu vào (Data Annotations)
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState); // 400
-
-            // 2. Gọi Service
-            var result = await _loaiSpService.Create(dto);
-
-            // 3. Xử lý kết quả
-            if (!result.Success)
+            try
             {
-                // Kiểm tra loại lỗi → trả status phù hợp
-                if (result.Message.Contains("tồn tại"))
-                    return Conflict(new { message = result.Message }); // 409 Conflict
-
-                return BadRequest(new { message = result.Message }); // 400
+                var loai = await _loaiSpService.GetById(id);
+                if (loai != null)
+                {
+                    return Ok(new ApiResponse<LoaiSanPhamDTO>
+                    {
+                        Message = "Lấy loại sản phẩm theo ID thành công!",
+                        DataDTO = loai,
+                        Success = true
+                    });
+                }
+                else
+                {
+                    return NotFound(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Không tìm thấy loại sản phẩm này!",
+                        Success = false
+                    });
+                }
+            } 
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<LoaiSanPhamDTO>
+                {
+                    Message = ex.Message,
+                    Success = false
+                });
             }
+        }
 
-            // 4. Thành công → 201 Created
-            var resultDto = result.DataDTO;
-            return CreatedAtAction(nameof(GetById),
-                new { id = resultDto.Category_id },  // route values
-                resultDto                           // body
-            );
+        // them moi 
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] LoaiSanPhamDTO loaiSanPhamDTO)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if(await _loaiSpService.isCategoryNameExist(loaiSanPhamDTO.CategoryName)) {
+                    return Conflict(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Tên loại sản phẩm đã tồn tại!",
+                        Success = false
+                    });
+                }
+
+                var loaiDTO = await _loaiSpService.Create(loaiSanPhamDTO);
+
+                return CreatedAtAction("Tạo sản phẩm thành công", new ApiResponse<LoaiSanPhamDTO>
+                {
+                    Message = "Thêm sản phẩm thành công!",
+                    DataDTO = loaiDTO,
+                    Success = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<LoaiSanPhamDTO>
+                {
+                    Message = ex.Message,
+                    Success = false
+                });
+            }
         }
 
         // ✅ PUT: api/categories/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] LoaiSanPhamDTO dto)
+        public async Task<IActionResult> Update(int id, [FromBody] LoaiSanPhamDTO loaiSanPhamDTO)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _loaiSpService.Update(id, dto);
-
-            if (!result.Success)
+            try
             {
-                if (result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new { message = result.Message });
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-                return BadRequest(new { message = result.Message });
+                if (await _loaiSpService.isCategoryExist(id))
+                {
+                    return NotFound(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Mã loại sản phẩm không tồn tại!",
+                        Success = false
+                    });
+                }
+
+                var loaiDTO = await _loaiSpService.Update(id, loaiSanPhamDTO);
+
+                return Ok(new ApiResponse<LoaiSanPhamDTO>
+                {
+                    Message = "Cập nhật sản phẩm thành công!",
+                    DataDTO = loaiDTO,
+                    Success = true
+                });
             }
-
-            return Ok(result.DataDTO);
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<LoaiSanPhamDTO>
+                {
+                    Message = ex.Message,
+                    Success = false
+                });
+            }
         }
 
         // ✅ DELETE: api/loaisanpham/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _loaiSpService.Delete(id);
-
-            if (!result.Success)
+            try
             {
-                if (result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new { message = result.Message });
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-                return BadRequest(new { message = result.Message });
+                if (await _loaiSpService.isCategoryExist(id))
+                {
+                    return NotFound(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Mã loại sản phẩm không tồn tại!",
+                        Success = false
+                    });
+                }
+
+                var result = _loaiSpService.Delete(id);
+
+                return NoContent();
             }
-
-            return Ok(new { message = result.Message });
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<LoaiSanPhamDTO>
+                {
+                    Message = ex.Message,
+                    Success = false
+                });
+            }
         }
     }
 }

@@ -61,7 +61,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 
             // 4. Thành công → 201 Created
             return CreatedAtAction(nameof(GetById), 
-                new { id = result.DataDTO!.Supplier_id },   //route value
+                new { id = result.DataDTO!.SupplierId },   //route value
                 result.DataDTO);                            //body
         }
 

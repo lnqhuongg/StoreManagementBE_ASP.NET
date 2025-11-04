@@ -2,16 +2,16 @@
 {
     public class NhaCungCapDTO
     {
-        public int Supplier_id { get; set; }
+        public int SupplierId { get; set; }
         public string Name { get; set; }
         public string Phone { get; set; }
         public string Email { get; set; }
         public string Address { get; set; }
-        public int Status { get; set; }
+        public bool Status { get; set; }
         public NhaCungCapDTO() { }
-        public NhaCungCapDTO(int supplier_id, string name, string phone, string email, string address, int status)
+        public NhaCungCapDTO(int supplier_id, string name, string phone, string email, string address, bool status)
         {
-            this.Supplier_id = supplier_id;
+            this.SupplierId = supplier_id;
             this.Name = name;
             this.Phone = phone;
             this.Email = email;

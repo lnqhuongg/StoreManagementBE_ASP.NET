@@ -48,8 +48,26 @@ namespace StoreManagementBE.BackendServer.Services
             try
             {
                 var phieuNhap = _mapper.Map<PhieuNhap>(phieuNhapDto);
+
+                // Nếu có supplier id
+                if (phieuNhap.Supplier != null && phieuNhap.Supplier.SupplierId > 0)
+                {
+                    // Lấy entity thực từ context để gắn vào
+                    var existingSupplier = await _context.NhaCungCaps.FindAsync(phieuNhap.Supplier.SupplierId);
+                    if (existingSupplier != null)
+                    {
+                        phieuNhap.Supplier = existingSupplier; // Gắn lại entity đang được track
+                        phieuNhap.SupplierId = existingSupplier.SupplierId;
+                    }
+                }
+
                 _context.PhieuNhaps.Add(phieuNhap);
-                var result = _context.SaveChanges();
+
+                var result = _context.SaveChanges(acceptAllChangesOnSuccess: false);
+                _context.ChangeTracker.AcceptAllChanges();
+
+                _context.ChangeTracker.DetectChanges();
+
                 if (result > 0)
                 {
                     // Nạp thêm navigation properties (nếu cần)
@@ -71,37 +89,58 @@ namespace StoreManagementBE.BackendServer.Services
             }
         }
 
-        //update
         public async Task<PhieuNhapDTO> Update(PhieuNhapDTO phieuNhapDto)
         {
-            var phieuNhapTMP = await _context.PhieuNhaps.FindAsync(phieuNhapDto.ImportId);
-            if (phieuNhapTMP == null) return null;
-            else
+            try
             {
-                phieuNhapTMP.ImportDate = phieuNhapDto.ImportDate;
-                phieuNhapTMP.SupplierId = phieuNhapDto.Supplier.supplier_id;
-                phieuNhapTMP.UserId = phieuNhapDto.UserId; // sua thanh User va User.UserId
-                phieuNhapTMP.TotalAmount = phieuNhapDto.TotalAmount;
-                try
+                var phieuNhap = await _context.PhieuNhaps
+                    .Include(p => p.Supplier)
+                    .FirstOrDefaultAsync(p => p.ImportId == phieuNhapDto.ImportId);
+
+                if (phieuNhap == null)
                 {
-                    _context.PhieuNhaps.Update(phieuNhapTMP);
-                    var rs = await _context.SaveChangesAsync();
-                    if (rs > 0)
-                    {
-                        return _mapper.Map<PhieuNhapDTO>(phieuNhapTMP);
-                    }
-                    else
-                    {
-                        return null;
-                    }
+                    Console.WriteLine("Không tìm thấy phiếu nhập để cập nhật.");
+                    return null;
                 }
-                catch(Exception ex)
+
+                // Gán lại các thuộc tính cơ bản
+                phieuNhap.ImportDate = phieuNhapDto.ImportDate;
+                phieuNhap.TotalAmount = phieuNhapDto.TotalAmount;
+                phieuNhap.UserId = phieuNhapDto.UserId;
+
+                // Gán lại SupplierId (nếu có)
+                if (phieuNhapDto.Supplier != null)
                 {
-                    Console.WriteLine($"Lỗi khi cập nhật phiếu nhập: {ex.Message}");
+                    phieuNhap.SupplierId = phieuNhapDto.Supplier.SupplierId;
+                }
+
+                // Không gán lại Supplier object để tránh lỗi tracked entity
+                phieuNhap.Supplier = null;
+
+                // Đánh dấu entity là modified
+                _context.Entry(phieuNhap).State = EntityState.Modified;
+
+                var result = await _context.SaveChangesAsync();
+
+                if (result > 0)
+                {
+                    // Nạp lại navigation property sau khi cập nhật
+                    await _context.Entry(phieuNhap).Reference(p => p.Supplier).LoadAsync();
+                    return _mapper.Map<PhieuNhapDTO>(phieuNhap);
+                }
+                else
+                {
+                    Console.WriteLine("Không có thay đổi nào được lưu.");
                     return null;
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi cập nhật phiếu nhập: {ex.Message}");
+                return null;
+            }
         }
+
 
         //delete
         public bool Delete(int id)

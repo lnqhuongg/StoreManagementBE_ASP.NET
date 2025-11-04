@@ -30,11 +30,14 @@ namespace StoreManagementBE.BackendServer.Services
         public async Task<NhaCungCapDTO> GetById(int supplier_id)
         {
             var supplier = await _context.NhaCungCaps.FindAsync(supplier_id);
+            Console.WriteLine("Supplier fetched in service: " + (supplier != null ? supplier.SupplierId : "null"));
             //FindAsync(id):                            nhanh & tiện khi bạn có primary key; có thể trả về bản ghi đang tracked mà không hit DB.
             //FirstOrDefaultAsync(x => x.id == id):     dùng được mọi điều kiện (x.Email, x.Phone...), nhưng luôn query DB và không dùng cache theo khóa.
 
             if (supplier == null) return null;
-            else return _mapper.Map<NhaCungCapDTO>(supplier);
+            var supplierDTO = _mapper.Map<NhaCungCapDTO>(supplier);
+            Console.WriteLine("Mapped SupplierDTO in service: " + (supplierDTO != null ? supplierDTO.SupplierId : "null"));
+            return _mapper.Map<NhaCungCapDTO>(supplier);
         }
 
         public List<NhaCungCap> SearchByKeyword(string keyword)
@@ -130,7 +133,7 @@ namespace StoreManagementBE.BackendServer.Services
                 existed.Phone = nhaCungCapDTO.Phone;
                 existed.Email = nhaCungCapDTO.Email;
                 existed.Address = nhaCungCapDTO.Address;
-                existed.Status = nhaCungCapDTO.Status == 1;
+                existed.Status = nhaCungCapDTO.Status;
 
                 //Luu vào DB
                 _context.NhaCungCaps.Update(existed);

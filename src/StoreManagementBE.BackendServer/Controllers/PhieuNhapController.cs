@@ -1,10 +1,6 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Services.Interfaces;
-using StoreManagementBE.BackendServer.Helpers;
-using StoreManagementBE.BackendServer.Models.Entities;
 
 namespace StoreManagementBE.BackendServer.Controllers
 {
@@ -13,11 +9,11 @@ namespace StoreManagementBE.BackendServer.Controllers
     public class PhieuNhapController : ControllerBase
     {
         private readonly IPhieuNhapService _phieuNhapService;
-        private readonly IMapper _mapper;
-        public PhieuNhapController(IPhieuNhapService phieuNhapService, IMapper mapper)
+        private readonly INhaCungCapService _nhaCungCapService;
+        public PhieuNhapController(IPhieuNhapService phieuNhapService, INhaCungCapService nhaCungCapService)
         {
             _phieuNhapService = phieuNhapService;
-            _mapper = mapper;
+            _nhaCungCapService = nhaCungCapService;
         }
 
         //get all
@@ -25,9 +21,8 @@ namespace StoreManagementBE.BackendServer.Controllers
         public async Task<IActionResult> GetAll()
         {
             var list = await _phieuNhapService.GetAll();
-            var dtoList = _mapper.Map<List<PhieuNhapDTO>>(list);
             var response = new ApiResponse<List<PhieuNhapDTO>>();
-            if (dtoList == null || dtoList.Count == 0)
+            if (list == null || list.Count == 0)
             {
                 response.Success = false;
                 response.Message = "Không có phiếu nhập nào!";
@@ -36,7 +31,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 
             response.Success = true;
             response.Message = "Lấy danh sách phiếu nhập thành công!";
-            response.DataDTO = dtoList;
+            response.DataDTO = list;
 
             return Ok(response);
         }
@@ -68,31 +63,63 @@ namespace StoreManagementBE.BackendServer.Controllers
         public async Task<IActionResult> Create([FromBody] DTOs.PhieuNhapDTO phieuNhapDto)
         {
             Console.WriteLine("Received PhieuNhapDTO: " + System.Text.Json.JsonSerializer.Serialize(phieuNhapDto));
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new
-                {
-                    message = "Dữ liệu không hợp lệ!",
-                    errors = ModelState.Values.SelectMany(v => v.Errors)
-                                              .Select(e => e.ErrorMessage)
-                });
-            }
+            // lấy thời gian hiện tại
+            phieuNhapDto.ImportDate = DateTime.Now;
+
+            var response = new ApiResponse<PhieuNhapDTO>();
             var success = await _phieuNhapService.Create(phieuNhapDto);
             if (success == null)
-                return BadRequest(new { message = "Thêm phiếu nhập thất bại!" });
-            return Ok(new { message = "Thêm phiếu nhập thành công!" });
+            {
+                response.Success = false;
+                response.Message = "Thêm phiếu nhập thất bại!";
+                return BadRequest(response);
+            }
+            response.Success = true;
+            response.Message = "Thêm phiếu nhập thành công!";
+            response.DataDTO = success;
+            return CreatedAtAction(nameof(GetById), new { id = success.ImportId }, response);
         }
 
-        //update
+
+        // update
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] PhieuNhapDTO phieuNhapDto)
+        public async Task<IActionResult> Update(int id, [FromBody] PhieuNhapDTO phieuNhapDto)
         {
-            phieuNhapDto.ImportId = id; // đảm bảo id trùng với route
-            var success = _phieuNhapService.Update(phieuNhapDto);
-            if (success == null)
-                return NotFound(new { message = "Cập nhật thất bại, không tìm thấy phiếu nhập!" });
-            return Ok(new { message = "Cập nhật phiếu nhập thành công!" });
+            // Kiểm tra đầu vào
+            if (phieuNhapDto == null)
+            {
+                return BadRequest(new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "Dữ liệu cập nhật không hợp lệ!"
+                });
+            }
+
+            // Đảm bảo id trong route và body khớp nhau
+            phieuNhapDto.ImportId = id;
+
+            // Gọi service xử lý
+            var updated = await _phieuNhapService.Update(phieuNhapDto);
+
+            if (updated == null)
+            {
+                return NotFound(new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "Không tìm thấy phiếu nhập để cập nhật!"
+                });
+            }
+
+            // Thành công
+            return Ok(new ApiResponse<PhieuNhapDTO>
+            {
+                Success = true,
+                Message = "Cập nhật phiếu nhập thành công!",
+                DataDTO = updated
+            });
         }
+
+
 
         //search by keyword
         [HttpGet("search")]

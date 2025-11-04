@@ -16,22 +16,10 @@ namespace StoreManagementBE.BackendServer.Models
         public DbSet<KhachHang> KhachHangs { set; get; }
         public DbSet<MaGiamGia> KhuyenMais { set; get; }
         public DbSet<LoaiSanPham> LoaiSanPhams { set; get; }
-        //public DbSet<NhaCungCap> NhaCungCaps { set; get; }
-        public DbSet<NhanVien> NhanViens { set; get; }
-        //public DbSet<PhieuNhap> PhieuNhaps { set; get; }
-        //public DbSet<SanPham> SanPhams { set; get; }
-        //public DbSet<ThanhToan> ThanhToans { set; get; }
-        //public DbSet<NhaCungCap> NhaCungCaps { set; get; }
-        public DbSet<NhanVien> NhanViens { set; get; }
-        //public DbSet<PhieuNhap> PhieuNhaps { set; get; }
-        //public DbSet<SanPham> SanPhams { set; get; }
-        //public DbSet<ThanhToan> ThanhToans { set; get; }
->>>>>>>>> Temporary merge branch 2
         public DbSet<NhaCungCap> NhaCungCaps { set; get; }
         public DbSet<NhanVien> NhanViens { set; get; }
         public DbSet<PhieuNhap> PhieuNhaps { set; get; }
         public DbSet<SanPham> SanPhams { set; get; }
         public DbSet<ThanhToan> ThanhToans { set; get; }
->>>>>>>>> Temporary merge branch 2
     }
 }

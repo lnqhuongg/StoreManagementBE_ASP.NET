@@ -9,7 +9,7 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     {
         [Key]
         [Column("product_id")]
-        public int ProductID { get; set; }
+        public int ProductId { get; set; }
 
         [Column("category_id")]
         public int? CategoryId { get; set; }

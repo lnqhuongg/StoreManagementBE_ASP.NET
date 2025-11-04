@@ -98,7 +98,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 {
                     return BadRequest(ModelState);
                 }
-                if (await _sanPhamService.checkExistBarcode(sp.Barcode) || await _sanPhamService.checkExistID(sp.ProductID))
+                if (await _sanPhamService.checkExistBarcode(sp.Barcode) || await _sanPhamService.checkExistID(sp.ProductId))
                 {
                     return Conflict(new ApiResponse<SanPhamDTO>
                     {

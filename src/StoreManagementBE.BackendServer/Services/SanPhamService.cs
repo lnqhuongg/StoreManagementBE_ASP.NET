@@ -37,7 +37,7 @@ namespace StoreManagementBE.BackendServer.Services
         {
             try
             {
-                var sp = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).FirstOrDefaultAsync(x => x.ProductID == id);
+                var sp = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).FirstOrDefaultAsync(x => x.ProductId == id);
                 return _mapper.Map<SanPhamDTO>(sp);
             }
             catch (Exception e)
@@ -57,7 +57,7 @@ namespace StoreManagementBE.BackendServer.Services
         public async Task<bool> checkExistID(int ID)
         {
             bool exists = await _context.SanPhams
-                .AnyAsync(x => x.ProductID == ID);
+                .AnyAsync(x => x.ProductId == ID);
 
             return exists;
         }
@@ -89,7 +89,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var createdProduct = await _context.SanPhams
                     .Include(x => x.Category)
                     .Include(x => x.Supplier)
-                    .FirstOrDefaultAsync(x => x.ProductID == sanpham.ProductID);
+                    .FirstOrDefaultAsync(x => x.ProductId == sanpham.ProductId);
 
                 var resultDTO = _mapper.Map<SanPhamDTO>(createdProduct);
 
@@ -106,7 +106,7 @@ namespace StoreManagementBE.BackendServer.Services
             try
             {
                 var sanpham = await _context.SanPhams
-                    .FirstOrDefaultAsync(x => x.ProductID == id);
+                    .FirstOrDefaultAsync(x => x.ProductId == id);
 
 
                 if (sanpham != null)
@@ -131,7 +131,7 @@ namespace StoreManagementBE.BackendServer.Services
             {
                 // SỬA: Thêm await
                 var existingProduct = await _context.SanPhams
-                    .FirstOrDefaultAsync(x => x.ProductID == sp.ProductID);
+                    .FirstOrDefaultAsync(x => x.ProductId == sp.ProductId);
 
                 if (existingProduct == null)
                     return null;
@@ -156,7 +156,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var updatedProduct = await _context.SanPhams
                     .Include(x => x.Category)
                     .Include(x => x.Supplier)
-                    .FirstOrDefaultAsync(x => x.ProductID == sp.ProductID);
+                    .FirstOrDefaultAsync(x => x.ProductId == sp.ProductId);
 
                 var resultDTO = _mapper.Map<SanPhamDTO>(updatedProduct);
 

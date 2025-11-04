@@ -4,7 +4,6 @@ using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Models;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace StoreManagementBE.BackendServer.Services
 {
@@ -19,50 +18,42 @@ namespace StoreManagementBE.BackendServer.Services
             _mapper = mapper;
         }
 
-        // Lấy tất cả nhà cung cấp
+        // Lấy tất cả
         public async Task<List<NhaCungCapDTO>> GetAll()
         {
-            var list = await _context.NhaCungCaps.AsNoTracking().ToListAsync();
-            return _mapper.Map<List<NhaCungCapDTO>>(list);
+            var list = await _context.NhaCungCaps.ToListAsync();
+            return _mapper.Map<List<NhaCungCapDTO>>(list);  //return list DTO
         }
 
-        // Lấy 1 nhà cung cấp theo ID
-        public async Task<NhaCungCapDTO> GetById(int supplier_id)
+        // Lấy theo id
+        public async Task<NhaCungCapDTO?> GetById(int supplierId)   //thêm dấu ? cho possible null return
         {
-            var supplier = await _context.NhaCungCaps.FindAsync(supplier_id);
             //FindAsync(id):                            nhanh & tiện khi bạn có primary key; có thể trả về bản ghi đang tracked mà không hit DB.
             //FirstOrDefaultAsync(x => x.id == id):     dùng được mọi điều kiện (x.Email, x.Phone...), nhưng luôn query DB và không dùng cache theo khóa.
-
-            if (supplier == null) return null;
-            else return _mapper.Map<NhaCungCapDTO>(supplier);
+            var supplier = await _context.NhaCungCaps.FindAsync(supplierId);
+            return supplier == null ? null : _mapper.Map<NhaCungCapDTO>(supplier);
         }
 
+        // Tìm kiếm
         public List<NhaCungCap> SearchByKeyword(string keyword)
         {
-            //nếu null thì thành "", đồng thời Trim() bỏ khoảng trắng đầu/cuối
-            keyword = keyword?.Trim() ?? "";
+            keyword = keyword?.Trim() ?? "";    //nếu null thì thành "", đồng thời Trim() bỏ khoảng trắng đầu/cuối
 
             //Tạo truy vấn LINQ trên DbSet<NhaCungCap>
             return _context.NhaCungCaps
-                     .Where(x =>
-                            x.Name.Contains(keyword) ||        // true nếu Name chứa keyword
+                .Where(x => x.Name.Contains(keyword) ||        // true nếu Name chứa keyword
                             x.Email.Contains(keyword) ||       // true nếu Email chứa keyword
                             x.Phone.Contains(keyword) ||       // true nếu Phone chứa keyword
                             x.Address.Contains(keyword)        // true nếu Address chứa keyword
                         ).ToList();                            // thực thi truy vấn và trả về List<NhaCungCap>
         }
 
-        //Create từ hư vô
+        // Tạo mới
         public async Task<ApiResponse<NhaCungCapDTO>> Create(NhaCungCapDTO nhaCungCapDTO)
         {
             try
             {
-                //Kiểm tra trùng lắp theo tên + email + sdt (tùy bạn chỉnh rule)
-                var existed = await _context.NhaCungCaps
-                    .AnyAsync(x => x.Name == nhaCungCapDTO.Name
-                                || x.Email == nhaCungCapDTO.Email
-                                || x.Phone == nhaCungCapDTO.Phone);
-                if (existed)
+                if (await IsSupplierExist(nhaCungCapDTO.Name, nhaCungCapDTO.Email, nhaCungCapDTO.Phone))   //gọi service kiểm tra trùng
                 {
                     return new ApiResponse<NhaCungCapDTO>
                     {
@@ -72,13 +63,13 @@ namespace StoreManagementBE.BackendServer.Services
                 }
 
                 //Map DTO -> entity
-                var nccEntity = _mapper.Map<NhaCungCap>(nhaCungCapDTO);
-                _context.NhaCungCaps.Add(nccEntity);
+                var entity = _mapper.Map<NhaCungCap>(nhaCungCapDTO);
+                _context.NhaCungCaps.Add(entity);
 
-                //Lưu vào DB
+                // Lưu vào DB
                 await _context.SaveChangesAsync();
 
-                var dataDTO = _mapper.Map<NhaCungCapDTO>(nccEntity);
+                var dataDTO = _mapper.Map<NhaCungCapDTO>(entity);
                 return new ApiResponse<NhaCungCapDTO>
                 {
                     Success = true,
@@ -88,21 +79,18 @@ namespace StoreManagementBE.BackendServer.Services
             }
             catch (Exception ex)
             {
-                return new ApiResponse<NhaCungCapDTO>
-                {
-                    Success = false,
-                    Message = ex.Message
-                };
+                return new ApiResponse<NhaCungCapDTO> { Success = false, Message = ex.Message };
             }
         }
 
+        // Cập nhật
         public async Task<ApiResponse<NhaCungCapDTO>> Update(int id, NhaCungCapDTO nhaCungCapDTO)
         {
             try
             {
                 //Kiểm tra đã tồn tại chưa
-                var existed = await _context.NhaCungCaps.FirstOrDefaultAsync(x => x.Supplier_id == id);
-                if (existed == null)
+                var existed = await _context.NhaCungCaps.FirstOrDefaultAsync(x => x.SupplierId == id);
+                if (existed == null)    //nếu không tìm thấy
                 {
                     return new ApiResponse<NhaCungCapDTO>
                     {
@@ -111,17 +99,13 @@ namespace StoreManagementBE.BackendServer.Services
                     };
                 }
 
-                // Check trùng 
-                var duplicated = await _context.NhaCungCaps
-                    .AnyAsync(x => (x.Name == nhaCungCapDTO.Name
-                                || x.Email == nhaCungCapDTO.Email
-                                || x.Phone == nhaCungCapDTO.Phone) && x.Supplier_id != id);
-                if (duplicated)
+                //kiểm tra trùng lắp
+                if (await IsSupplierExist(nhaCungCapDTO.Name, nhaCungCapDTO.Email, nhaCungCapDTO.Phone, ignoreId: id))
                 {
                     return new ApiResponse<NhaCungCapDTO>
                     {
                         Success = false,
-                        Message = "Tên hoặc email đã được dùng bởi nhà cung cấp khác!"
+                        Message = "Tên hoặc email hoặc sđt đã được dùng bởi nhà cung cấp khác!"
                     };
                 }
 
@@ -130,10 +114,8 @@ namespace StoreManagementBE.BackendServer.Services
                 existed.Phone = nhaCungCapDTO.Phone;
                 existed.Email = nhaCungCapDTO.Email;
                 existed.Address = nhaCungCapDTO.Address;
-                existed.Status = nhaCungCapDTO.Status == 1;
+                existed.Status = nhaCungCapDTO.Status;
 
-                //Luu vào DB
-                _context.NhaCungCaps.Update(existed);
                 await _context.SaveChangesAsync();
 
                 var dataDTO = _mapper.Map<NhaCungCapDTO>(existed);
@@ -146,12 +128,38 @@ namespace StoreManagementBE.BackendServer.Services
             }
             catch (Exception ex)
             {
-                return new ApiResponse<NhaCungCapDTO>
-                {
-                    Success = false,
-                    Message = ex.Message
-                };
+                return new ApiResponse<NhaCungCapDTO> { Success = false, Message = ex.Message };
             }
+        }
+
+        // Xóa
+        //public bool Delete(int id)
+        //{
+        //    try
+        //    {
+        //        var existing = _context.NhaCungCaps.Find(id);
+        //        if (existing == null) return false;
+
+        //        _context.NhaCungCaps.Remove(existing);
+        //        _context.SaveChanges();
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception("Lỗi khi xóa nhà cung cấp: " + ex.Message);
+        //    }
+        //}
+
+        public async Task<bool> IsSupplierIdExist(int supplierId)
+        {
+            return await _context.NhaCungCaps.AnyAsync(x => x.SupplierId == supplierId);
+        }
+
+        public async Task<bool> IsSupplierExist(string name, string email, string phone, int? ignoreId = null)
+        {
+            return await _context.NhaCungCaps.AnyAsync(x =>
+                (x.Name == name || x.Email == email || x.Phone == phone) &&
+                (!ignoreId.HasValue || x.SupplierId != ignoreId.Value));
         }
     }
 }

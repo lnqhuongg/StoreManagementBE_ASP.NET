@@ -19,17 +19,45 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _service.GetAll();
-            return Ok(data);    //return status 200
+            try
+            {
+                var list = await _service.GetAll();
+                if (list.Count > 0)
+                    return Ok(new ApiResponse<List<NhaCungCapDTO>>
+                    {
+                        Success = true,
+                        Message = "Lấy danh sách nhà cung cấp thành công!",
+                        DataDTO = list
+                    });
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<NhaCungCapDTO> { Success = false, Message = ex.Message });
+            }
         }
 
         // GET: api/suppliers/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var data = await _service.GetById(id);
-            if (data == null) return NotFound(new { message = "Không tìm thấy nhà cung cấp!" });
-            return Ok(data);
+            try
+            {
+                var data = await _service.GetById(id);
+                if (data == null)
+                    return NotFound(new ApiResponse<NhaCungCapDTO> { Success = false, Message = "Không tìm thấy nhà cung cấp!" });
+
+                return Ok(new ApiResponse<NhaCungCapDTO>
+                {
+                    Success = true,
+                    Message = "Lấy nhà cung cấp theo ID thành công!",
+                    DataDTO = data
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<NhaCungCapDTO> { Success = false, Message = ex.Message });
+            }
         }
 
         // GET: api/suppliers/search?keyword=abc
@@ -44,49 +72,81 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] NhaCungCapDTO dto)
         {
-            // 1. Validate đầu vào (Data Annotations)
-            if (!ModelState.IsValid) return BadRequest(ModelState);     //Status 400
-
-            // 2. Gọi Service để tạo mới
-            var result = await _service.Create(dto);
-
-            //3. Xử lý kết quả trả về từ Service
-            if (!result.Success)
+            try
             {
-                if (result.Message.Contains("tồn tại"))
-                    return Conflict(new { message = result.Message });  // 409
+                if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                return BadRequest(new { message = result.Message });    // 400
+                var result = await _service.Create(dto);
+                if (!result.Success)
+                {
+                    if (result.Message.Contains("tồn tại", StringComparison.OrdinalIgnoreCase))
+                        return Conflict(new { message = result.Message });
+                    return BadRequest(new { message = result.Message });
+                }
+
+                return CreatedAtAction(nameof(GetById),
+                    new { id = result.DataDTO!.SupplierId },
+                    new ApiResponse<NhaCungCapDTO>
+                    {
+                        Success = true,
+                        Message = "Thêm nhà cung cấp thành công!",
+                        DataDTO = result.DataDTO
+                    });
             }
-
-            // 4. Thành công → 201 Created
-            return CreatedAtAction(nameof(GetById), 
-                new { id = result.DataDTO!.Supplier_id },   //route value
-                result.DataDTO);                            //body
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<NhaCungCapDTO> { Success = false, Message = ex.Message });
+            }
         }
 
         // PUT: api/suppliers/{id}
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] NhaCungCapDTO dto)
         {
-            // 1. Validate đầu vào (Data Annotations)
-            if (!ModelState.IsValid) return BadRequest(ModelState);     //return status 400
-
-            // 2. Gọi Service để update
-            var result = await _service.Update(id, dto);
-
-            //3. Xử lý kết quả trả về từ Service
-            if (!result.Success)
+            try
             {
-                if (result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new { message = result.Message });  //return status 404
-                if (result.Message.Contains("đã được dùng", StringComparison.OrdinalIgnoreCase))
-                    return Conflict(new { message = result.Message });  //return status 409
-                return BadRequest(new { message = result.Message });    //return status 400
-            }
+                if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            // 4. Thành công → 200 Update
-            return Ok(result.DataDTO);  
+                if (!await _service.IsSupplierIdExist(id))
+                    return NotFound(new ApiResponse<NhaCungCapDTO> { Success = false, Message = "Mã nhà cung cấp không tồn tại!" });
+
+                var result = await _service.Update(id, dto);
+                if (!result.Success)
+                {
+                    if (result.Message.Contains("đã được dùng", StringComparison.OrdinalIgnoreCase))
+                        return Conflict(new { message = result.Message });
+                    return BadRequest(new { message = result.Message });
+                }
+
+                return Ok(new ApiResponse<NhaCungCapDTO>
+                {
+                    Success = true,
+                    Message = "Cập nhật nhà cung cấp thành công!",
+                    DataDTO = result.DataDTO
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<NhaCungCapDTO> { Success = false, Message = ex.Message });
+            }
         }
+
+        // DELETE: api/suppliers/{id}
+        //[HttpDelete("{id:int}")]
+        //public IActionResult Delete(int id)
+        //{
+        //    try
+        //    {
+        //        var ok = _service.Delete(id);
+        //        if (!ok)
+        //            return NotFound(new ApiResponse<NhaCungCapDTO> { Success = false, Message = "Không tìm thấy nhà cung cấp!" });
+
+        //        return NoContent();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new ApiResponse<NhaCungCapDTO> { Success = false, Message = ex.Message });
+        //    }
+        //}
     }
 }

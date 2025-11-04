@@ -7,25 +7,29 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class PhieuNhap
     {
         [Key]
-        public int Import_id { get; set; }
+        [Column("import_id")]
+        public int ImportId { get; set; }
 
         [Required]
-        public DateTime Import_date { get; set; }
+        [Column("import_date")]
+        public DateTime ImportDate { get; set; }
+
+        [Required(ErrorMessage = "Nhà cung cấp không được trống")]
+        [Column("supplier_id")]
+        public int SupplierId { get; set; }
+
+        [Required(ErrorMessage = "Nhân viên không được trống")]
+        [Column("user_id")]
+        public int UserId { get; set; }
 
         [Required]
-        public int Supplier_id { get; set; }
+        [Column("total_amount", TypeName = "decimal(10,2)")]
+        public decimal TotalAmount { get; set; }
 
-        [Required]
-        public int User_id { get; set; }
-
-        [Required]
-        [Column(TypeName = "decimal(10,2)")]
-        public decimal Total_amount { get; set; }
-
-        [ForeignKey("user_id")]
+        [ForeignKey(nameof(UserId))]
         public NhanVien? Staff { get; set; }
 
-        [ForeignKey("supplier_id")]
+        [ForeignKey(nameof(SupplierId))]
         public NhaCungCap? Supplier { get; set; }
 
         public ICollection<ChiTietPhieuNhap>? ImportDetails { get; set; }

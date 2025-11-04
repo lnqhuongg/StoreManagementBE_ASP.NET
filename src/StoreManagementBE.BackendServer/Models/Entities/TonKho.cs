@@ -7,15 +7,21 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class TonKho
     {
         [Key]
-        public int Inventory_id { get; set; }
+        [Column("inventory_id")]
+        public int InventoryId { get; set; }
 
         [Required]
-        public int Product_id { get; set; }
+        [Column("product_id")]
+        public int ProductId { get; set; }
+        [ForeignKey(nameof(ProductId))]
+        public SanPham? Product { get; set; }
 
         [Required]
+        [Column("quantity")]
         public int Quantity { get; set; }
 
         [Required]
-        public DateTime Update_at { get; set; }
+        [Column("updated_at", TypeName = "timestamp")]
+        public DateTime UpdatedAt { get; set; }
     }
 }

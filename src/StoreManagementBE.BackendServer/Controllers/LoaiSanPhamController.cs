@@ -67,7 +67,7 @@ namespace StoreManagementBE.BackendServer.Controllers
             // 4. Thành công → 201 Created
             var resultDto = result.DataDTO;
             return CreatedAtAction(nameof(GetById),
-                new { id = resultDto.Category_id },  // route values
+                new { id = resultDto.CategoryId },  // route values
                 resultDto                           // body
             );
         }

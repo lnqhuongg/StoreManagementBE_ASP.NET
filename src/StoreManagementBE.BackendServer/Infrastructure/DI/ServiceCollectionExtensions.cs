@@ -12,11 +12,7 @@ namespace StoreManagementBE.BackendServer.Infrastructure.DI
         {
             // Đăng ký tất cả service ở đây
             services.AddScoped<ILoaiSanPhamService, LoaiSanPhamService>();
-            //services.AddScoped<ISanPhamService, SanPhamService>();
-            //services.AddScoped<IPhieuNhapService, PhieuNhapService>();
-            //services.AddScoped<IChiTietPhieuNhapService, ChiTietPhieuNhapService>();
-            //services.AddScoped<INhaCungCapService, NhaCungCapService>();
-            
+
             return services;
         }
     }

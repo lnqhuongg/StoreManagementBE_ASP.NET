@@ -7,16 +7,24 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class ThanhToan
     {
         [Key]
-        public int Payment_id { get; set; }
+        [Column("payment_id")]
+        public int PaymentId { get; set; }
+
+        [Column("order_id")]
+        public int OrderId { get; set; }
+        [ForeignKey(nameof(OrderId))]
+        public DonHang? Order { get; set; }
 
         [Required]
-        [ForeignKey("order_id")]
-        public DonHang Order { get; set; }
+        [Column("amount")]
+        public decimal Amount { get; set; }
 
         [Required]
-        public int Quantity { get; set; }
+        [Column("payment_method")]
+        public string PaymentMethod { get; set; } = null!;
 
         [Required]
-        public DateTime Update_at { get; set; }
+        [Column("payment_date", TypeName = "timestamp")]
+        public DateTime PaymentDate { get; set; }
     }
 }

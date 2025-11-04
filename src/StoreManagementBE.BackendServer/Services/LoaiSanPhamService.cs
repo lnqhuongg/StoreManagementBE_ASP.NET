@@ -39,7 +39,7 @@ namespace StoreManagementBE.BackendServer.Services
         {
             if (string.IsNullOrEmpty(keyword))
                 return _context.LoaiSanPhams.ToList();
-            return _context.LoaiSanPhams.Where(x => x.Category_name.Contains(keyword)).ToList();
+            return _context.LoaiSanPhams.Where(x => x.CategoryName.Contains(keyword)).ToList();
         }
 
         // tao moi 
@@ -47,7 +47,7 @@ namespace StoreManagementBE.BackendServer.Services
         {
             try
             {
-                var exists = await _context.LoaiSanPhams.AnyAsync(x => x.Category_name == loaiSanPhamDTO.Category_name);
+                var exists = await _context.LoaiSanPhams.AnyAsync(x => x.CategoryName == loaiSanPhamDTO.CategoryName);
                 if (exists)
                 {
                     return new ApiResponse<LoaiSanPhamDTO>
@@ -62,6 +62,7 @@ namespace StoreManagementBE.BackendServer.Services
                 await _context.SaveChangesAsync();
 
                 var dataDTO = _mapper.Map<LoaiSanPhamDTO>(loaiEntity);
+
                 return new ApiResponse<LoaiSanPhamDTO>
                 {
                     Success = true,
@@ -94,7 +95,7 @@ namespace StoreManagementBE.BackendServer.Services
                 }
 
                 // Cập nhật dữ liệu
-                existing.Category_name = loaiSanPhamDTO.Category_name;
+                existing.CategoryName = loaiSanPhamDTO.CategoryName;
 
                 _context.LoaiSanPhams.Update(existing);
                 await _context.SaveChangesAsync();

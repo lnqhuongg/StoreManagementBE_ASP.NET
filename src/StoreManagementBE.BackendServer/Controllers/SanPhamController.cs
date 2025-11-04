@@ -97,7 +97,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 }
                 if (await _sanPhamService.checkExistBarcode(sp.Barcode) || await _sanPhamService.checkExistID(sp.ProductID))
                 {
-                    return BadRequest(new ApiResponse<SanPhamDTO>
+                    return Conflict(new ApiResponse<SanPhamDTO>
                     {
                         Message = "Sản phẩm đã tồn tại hoặc trùng mã vạch!",
                         Success = false
@@ -105,7 +105,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 }
 
                 var newSP = await _sanPhamService.Create(sp);
-                return Ok(new ApiResponse<SanPhamDTO> {
+                return CreatedAtAction("Created products success!", new ApiResponse<SanPhamDTO> {
                     Message = "Thêm sản phẩm thành công!",
                     DataDTO = newSP,
                     Success = true
@@ -170,11 +170,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 }
                 var result = await _sanPhamService.Delete(id);
 
-                return Ok(new ApiResponse<SanPhamDTO>
-                {
-                    Message = "Xóa sản phẩm thành công!",
-                    Success = true,
-                });
+                return NoContent();
             }
             catch (Exception ex)
             {

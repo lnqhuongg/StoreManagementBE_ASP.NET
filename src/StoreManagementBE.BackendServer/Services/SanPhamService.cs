@@ -75,8 +75,8 @@ namespace StoreManagementBE.BackendServer.Services
                     CreatedAt = DateTime.Now,
                     Status = sp.Status,
 
-                    CategoryID = sp.Category?.Category_id,
-                    SupplierID = sp.Supplier?.supplier_id,
+                    CategoryID = sp.Category?.CategoryId,
+                    SupplierID = sp.Supplier?.SupplierId,
                 };
 
 
@@ -144,8 +144,8 @@ namespace StoreManagementBE.BackendServer.Services
                 existingProduct.Status = sp.Status;
 
                 // CHỈ update ID, không update navigation objects
-                existingProduct.CategoryID = sp.Category?.Category_id;
-                existingProduct.SupplierID = sp.Supplier?.supplier_id;
+                existingProduct.CategoryID = sp.Category?.CategoryId;
+                existingProduct.SupplierID = sp.Supplier?.SupplierId;
 
                 // KHÔNG cần gọi Update() vì Entity Framework đang track entity
                 await _context.SaveChangesAsync();

@@ -21,6 +21,7 @@ builder.Services.AddApplicationServices();
 // dang ky controllers tu folder Controllers
 builder.Services.AddControllers();
 
+
 var app = builder.Build();
 
 // ?? Middleware

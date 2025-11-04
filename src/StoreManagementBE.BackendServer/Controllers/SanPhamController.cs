@@ -119,13 +119,13 @@ namespace StoreManagementBE.BackendServer.Controllers
                 });
             }
         }
-        [HttpPut]
-        public async Task<IActionResult> Update([FromBody] SanPhamDTO sp)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] SanPhamDTO sp)
         {
             
             try
             {
-                if (await _sanPhamService.checkExistBarcode(sp.Barcode) == false || await _sanPhamService.checkExistID(sp.ProductID) == false)
+                if (await _sanPhamService.checkExistBarcode(sp.Barcode) == false || await _sanPhamService.checkExistID(id) == false)
                 {
                     return NotFound(new ApiResponse<SanPhamDTO>
                     {

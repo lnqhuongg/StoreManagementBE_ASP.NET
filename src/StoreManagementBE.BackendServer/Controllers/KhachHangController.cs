@@ -1,4 +1,6 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
 
@@ -15,22 +17,29 @@ namespace StoreManagementBE.BackendServer.Controllers
             _khService = khService;
         }
 
+        
+        
+        // ✅ GET: api/customers
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var list = _khService.GetAll();
+            var list = await _khService.GetAll();
             return Ok(list);
         }
 
+       
+        // ✅ GET: api/customers/{id}
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var item = _khService.GetById(id);
+            var item = await _khService.GetById(id);
             if (item == null)
                 return NotFound(new { message = "Không tìm thấy khách hàng này!" });
+
             return Ok(item);
         }
 
+        // ✅ GET: api/customers/search?keyword=abc
         [HttpGet("search")]
         public IActionResult Search([FromQuery] string keyword)
         {
@@ -38,24 +47,53 @@ namespace StoreManagementBE.BackendServer.Controllers
             return Ok(result);
         }
 
+        // ✅ POST: api/customers
         [HttpPost]
-        public IActionResult Create([FromBody] KhachHang kh)
+        public async Task<IActionResult> Create([FromBody] KhachHangDTO dto)
         {
-            var success = _khService.Create(kh);
-            if (!success)
-                return BadRequest(new { message = "Thêm khách hàng thất bại!" });
-            return Ok(new { message = "Thêm khách hàng thành công!" });
+            // 1. Validate đầu vào (Data Annotations)
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // 2. Gọi Service
+            var result = await _khService.Create(dto);
+            // 3. Xử lý kết quả
+            if (!result.Success)
+            {
+                // Kiểm tra loại lỗi → trả status phù hợp              
+                if (result.Message.Contains("tồn tại"))
+                    return Conflict(new { message = result.Message });// 409 Conflict
+
+                return BadRequest(new { message = result.Message });// 400
+            }
+            // 4. Thành công → 201 Created
+            var resultDto = result.DataDTO;
+            return CreatedAtAction(nameof(GetById),
+                new { id = resultDto.Customer_id },  // route values
+                resultDto                           // body
+            );
+  
         }
 
+        // ✅ PUT: api/customers/{id}
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] KhachHang kh)
+        public async Task<IActionResult> Update(int id, [FromBody] KhachHangDTO dto)
         {
-            kh.customer_id = id;
-            var success = _khService.Update(kh);
-            if (!success)
-                return NotFound(new { message = "Cập nhật thất bại, không tìm thấy khách hàng!" });
-            return Ok(new { message = "Cập nhật khách hàng thành công!" });
-        }
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
+            var result = await _khService.Update(id, dto);
+
+            if (!result.Success)
+            {
+                if (result.Message.Contains("không tìm thấy"))
+                    return NotFound(new { message = result.Message });
+
+                return BadRequest(new { message = result.Message });
+            }
+
+            return Ok(result.DataDTO);
+        }
+        
     }
 }

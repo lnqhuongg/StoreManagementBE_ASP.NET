@@ -22,14 +22,31 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var list = await _sanPhamService.GetAll();
-            Console.WriteLine(">>> Running /api/products GetAll()");
-            if (list.Count > 0)
+            try
             {
-                return Ok(list);
-            } else
+                var list = await _sanPhamService.GetAll();
+                Console.WriteLine(">>> Running /api/products GetAll()");
+                if (list.Count > 0)
+                {
+                    var api = new ApiResponse<List<SanPhamDTO>>
+                    {
+                        Message = "Lấy danh sách sản phẩm thành công!",
+                        DataDTO = list,
+                        Success = true
+                    };
+                    return Ok(api);
+                }
+                else
+                {
+                    return NoContent();
+                }
+            } catch (Exception e)
             {
-                return NoContent();
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = e.Message,
+                    Success = false
+                });
             }
         }
 
@@ -42,15 +59,28 @@ namespace StoreManagementBE.BackendServer.Controllers
                 var sp = await _sanPhamService.GetById(id);
                 if (sp != null)
                 {
-                    return Ok(sp);
+                    return Ok(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Lấy sản phẩm theo ID thành công!",
+                        DataDTO = sp,
+                        Success = true
+                    });
                 }
                 else
                 {
-                    return NotFound(new { message = "Không tìm thấy loại sản phẩm này!" });
+                    return NotFound(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Không tìm thấy loại sản phẩm này!",
+                        Success = false
+                    });
                 }
             } catch(Exception e)
             {
-                return BadRequest();
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = e.Message,
+                    Success = false
+                });
             }
         }
 
@@ -58,64 +88,100 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] SanPhamDTO sp)
         {
-            if(!ModelState.IsValid)
+            
+            try
             {
-                BadRequest(ModelState);
-            }
-            var newSP = await _sanPhamService.Create(sp);
-            if(newSP!=null)
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                if (await _sanPhamService.checkExistBarcode(sp.Barcode) || await _sanPhamService.checkExistID(sp.ProductID))
+                {
+                    return BadRequest(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Sản phẩm đã tồn tại hoặc trùng mã vạch!",
+                        Success = false
+                    });
+                }
+
+                var newSP = await _sanPhamService.Create(sp);
+                return Ok(new ApiResponse<SanPhamDTO> {
+                    Message = "Thêm sản phẩm thành công!",
+                    DataDTO = newSP,
+                    Success = true
+                });
+            } catch(Exception e)
             {
-                return Ok(newSP);
-            } else
-            {
-                return BadRequest();
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = e.Message,
+                    Success = false
+                });
             }
         }
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] SanPhamDTO sp)
         {
-            if (!ModelState.IsValid)
+            
+            try
             {
-                BadRequest(ModelState);
-            }
-            var updateSP = await _sanPhamService.Update(sp);
-            if (updateSP != null)
+                if (await _sanPhamService.checkExistBarcode(sp.Barcode) == false || await _sanPhamService.checkExistID(sp.ProductID) == false)
+                {
+                    return NotFound(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Sản phẩm không tồn tại!",
+                        Success = false
+                    });
+                }
+
+                var updateSP = await _sanPhamService.Update(sp);
+                return Ok(new ApiResponse<SanPhamDTO>
+                {
+                    Message = "Cập nhật sản phẩm thành công!",
+                    DataDTO = updateSP,
+                    Success = true
+                });
+            } catch (Exception e)
             {
-                return Ok(updateSP);
-            }
-            else
-            {
-                return BadRequest();
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = e.Message,
+                    Success = false
+                });
             }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState); // THÊM RETURN
-            }
-
             try
             {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                if(await _sanPhamService.checkExistID(id) == false)
+                {
+                    return NotFound(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Sản phẩm không tồn tại!",
+                        Success = false
+                    });
+                }
                 var result = await _sanPhamService.Delete(id);
 
-                if (result != null && result.Success)
+                return Ok(new ApiResponse<SanPhamDTO>
                 {
-                    return Ok(result);
-                }
-                else
-                {
-                    return BadRequest(result);
-                }
+                    Message = "Xóa sản phẩm thành công!",
+                    Success = true,
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<bool>
+                return BadRequest(new ApiResponse<SanPhamDTO>
                 {
-                    Success = false,
-                    Message = $"Lỗi server: {ex.Message}"
+                    Message = ex.Message,
+                    Success = false
                 });
             }
         }
@@ -155,25 +221,22 @@ namespace StoreManagementBE.BackendServer.Controllers
                 List<SanPhamDTO> ls = await list;
                 if(ls.Count > 0)
                 {
-                    return Ok(new
+                    return Ok(new ApiResponse<List<SanPhamDTO>>
                     {
-                        message = "Lấy danh sách sản phẩm theo keyword thành công!",
-                        success = true,
-                        data = ls
+                        Message = "Lấy danh sách sản phẩm theo keyword thành công!",
+                        Success = true,
+                        DataDTO = ls
                     });
                 } else
                 {
-                    return Ok(new
-                    {
-                        message = "Không tìm thấy sản phẩm theo keyword!",
-                        success = false
-                    });
+                    return NoContent();
                 }
             } catch (Exception e)
             {
-                return BadRequest(new {
-                    message = "Lỗi khi tìm sản phẩm theo keyword!",
-                    success = false
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = e.Message,
+                    Success = false
                 });
             }
         }
@@ -186,28 +249,24 @@ namespace StoreManagementBE.BackendServer.Controllers
                 var list = await _sanPhamService.getByCategoryID(category_id);
                 if (list.Count > 0)
                 {
-                    return Ok(new
+                    return Ok(new ApiResponse<List<SanPhamDTO>>
                     {
-                        message = "Lấy danh sách sản phẩm theo category thành công!",
-                        success = true,
-                        data = list
+                        Message = "Lấy danh sách sản phẩm theo category thành công!",
+                        Success = true,
+                        DataDTO = list
                     });
                 }
                 else
                 {
-                    return Ok(new
-                    {
-                        message = "Không tìm thấy sản phẩm theo category!",
-                        success = false
-                    });
+                    return NoContent();
                 }
             }
             catch (Exception e)
             {
-                return BadRequest(new
+                return BadRequest(new ApiResponse<SanPhamDTO>
                 {
-                    message = "Lỗi khi tìm sản phẩm theo category!",
-                    success = false
+                    Message = e.Message,
+                    Success = false
                 });
             }
         }
@@ -220,28 +279,24 @@ namespace StoreManagementBE.BackendServer.Controllers
                 var list = await _sanPhamService.getBySupplierID(supplier_id);
                 if (list.Count > 0)
                 {
-                    return Ok(new
+                    return Ok(new ApiResponse<List<SanPhamDTO>>
                     {
-                        message = "Lấy danh sách sản phẩm theo supplier thành công!",
-                        success = true,
-                        data = list
+                        Message = "Lấy danh sách sản phẩm theo supplier thành công!",
+                        Success = true,
+                        DataDTO = list
                     });
                 }
                 else
                 {
-                    return Ok(new
-                    {
-                        message = "Không tìm thấy sản phẩm theo supplier!",
-                        success = false
-                    });
+                    return NoContent();
                 }
             }
             catch (Exception e)
             {
-                return BadRequest(new
+                return BadRequest(new ApiResponse<SanPhamDTO>
                 {
-                    message = "Lỗi khi tìm sản phẩm theo supplier!" + e.Message,
-                    success = false
+                    Message = e.Message,
+                    Success = false
                 });
             }
         }
@@ -251,18 +306,18 @@ namespace StoreManagementBE.BackendServer.Controllers
             try
             {
                 var list = await _sanPhamService.getProductsSortByPrice(order);
-                return Ok(new
+                return Ok(new ApiResponse<List<SanPhamDTO>>
                 {
-                    message = "Lấy danh sách sản phẩm theo giá " + order + " thành công!",
-                    data = list,
-                    success = true
+                    Message = "Lấy danh sách sản phẩm theo giá " + order + " thành công!",
+                    DataDTO = list,
+                    Success = true
                 });
             } catch (Exception e)
             {
-                return BadRequest(new
+                return BadRequest(new ApiResponse<SanPhamDTO>
                 {
-                    message = "Lỗi " + e.Message,
-                    success = false
+                    Message = e.Message,
+                    Success = false
                 });
             }
         }
@@ -321,18 +376,18 @@ namespace StoreManagementBE.BackendServer.Controllers
                         }
                     }
                 }
-                return Ok(new
+                return Ok(new ApiResponse<List<SanPhamDTO>>
                 {
-                    message = "Lấy danh sách sản phẩm theo ncc = " + supplier_id + ", lsp = " + category_id + ", giá = " + order + "!",
-                    data = list,
-                    success = true
+                    Message = "Lấy danh sách sản phẩm theo ncc = " + supplier_id + ", lsp = " + category_id + ", giá = " + order + "!",
+                    DataDTO = list,
+                    Success = true
                 });
             } catch(Exception e)
             {
-                return BadRequest(new
+                return BadRequest(new ApiResponse<SanPhamDTO>
                 {
-                    message = e.Message,
-                    success = false
+                    Message = e.Message,
+                    Success = false
                 });
             }
         }

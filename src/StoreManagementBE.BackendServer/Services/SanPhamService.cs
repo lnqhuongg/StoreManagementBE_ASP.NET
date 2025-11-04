@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Enum;
@@ -22,48 +23,48 @@ namespace StoreManagementBE.BackendServer.Services
 
         public async Task<List<SanPhamDTO>> GetAll()
         {
-            var list = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).ToListAsync();
-            return _mapper.Map<List<SanPhamDTO>>(list);
+            try
+            {
+                var list = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).ToListAsync();
+                return _mapper.Map<List<SanPhamDTO>>(list);
+            } catch(Exception e)
+            {
+                throw new Exception("Lỗi khi lấy danh sách sản phẩm: " + e.Message);
+            }
         }
         public async Task<SanPhamDTO> GetById(int id)
         {
-            var sp = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).FirstOrDefaultAsync(x => x.ProductID == id);
-            return _mapper.Map<SanPhamDTO>(sp);
+            try
+            {
+                var sp = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).FirstOrDefaultAsync(x => x.ProductID == id);
+                return _mapper.Map<SanPhamDTO>(sp);
+            } catch(Exception e)
+            {
+                throw new Exception("Lỗi khi lấy sản phẩm theo ID: " + e.Message);
+            }
         }
 
+        public async Task<bool> checkExistBarcode(string barcode)
+        {
+            bool barcodeExists = await _context.SanPhams
+                .AnyAsync(x => x.Barcode == barcode);
 
-        public async Task<ApiResponse<SanPhamDTO>> Create(SanPhamDTO sp)
+            return barcodeExists;
+        }
+
+        public async Task<bool> checkExistID(int ID)
+        {
+            bool exists = await _context.SanPhams
+                .AnyAsync(x => x.ProductID == ID);
+
+            return exists;
+        }
+
+        public async Task<SanPhamDTO> Create(SanPhamDTO sp)
         {
             try
             {
-                // Kiểm tra trùng ProductID
-                bool exists = await _context.SanPhams
-                    .AnyAsync(x => x.ProductID == sp.ProductID);
-
-                Console.WriteLine(sp.ProductName);
-
-                if (exists)
-                {
-                    return new ApiResponse<SanPhamDTO>
-                    {
-                        Success = false,
-                        Message = "Sản phẩm đã tồn tại!"
-                    };
-                }
-
-                // Kiểm tra trùng Barcode (nếu cần)
-                bool barcodeExists = await _context.SanPhams
-                    .AnyAsync(x => x.Barcode == sp.Barcode);
-
-                if (barcodeExists)
-                {
-                    return new ApiResponse<SanPhamDTO>
-                    {
-                        Success = false,
-                        Message = "Mã vạch đã tồn tại!"
-                    };
-                }
-
+                
                 // Tạo entity sản phẩm mới
                 SanPham sanpham = new SanPham
                 {
@@ -74,11 +75,8 @@ namespace StoreManagementBE.BackendServer.Services
                     CreatedAt = DateTime.Now,
                     Status = sp.Status,
 
-                    // QUAN TRỌNG: Chỉ set ID, KHÔNG set navigation properties
                     CategoryID = sp.Category?.Category_id,
                     SupplierID = sp.Supplier?.supplier_id,
-                    //Category = sp.Category,
-                    //Supplier = sp.Supplier
                 };
 
 
@@ -93,67 +91,39 @@ namespace StoreManagementBE.BackendServer.Services
 
                 var resultDTO = _mapper.Map<SanPhamDTO>(createdProduct);
 
-                return new ApiResponse<SanPhamDTO>
-                {
-                    Message = "Thêm mới sản phẩm thành công!",
-                    DataDTO = resultDTO, // Sửa thành Data thay vì DataDTO
-                    Success = true
-                };
+                return resultDTO;
             }
             catch (Exception e)
             {
-                return new ApiResponse<SanPhamDTO>
-                {
-                    Message = "Lỗi khi thêm mới sản phẩm: " + e.Message,
-                    Success = false
-                };
+                throw new Exception("Lỗi khi thêm sản phẩm: " + e.Message);
             }
         }
 
-        public async Task<ApiResponse<bool>> Delete(int id)
+        public async Task<bool> Delete(int id)
         {
             try
             {
-                // SỬA: Tìm entity trực tiếp, không dùng GetById
                 var sanpham = await _context.SanPhams
                     .FirstOrDefaultAsync(x => x.ProductID == id);
 
-                if (sanpham != null)
+                
+                if(sanpham!= null)
                 {
-                    // QUAN TRỌNG: Xóa trực tiếp entity, không dùng AutoMapper
                     _context.SanPhams.Remove(sanpham);
 
                     // SỬA: Dùng async
                     await _context.SaveChangesAsync();
 
-                    return new ApiResponse<bool>
-                    {
-                        Message = "Xóa sản phẩm thành công!",
-                        DataDTO = true, 
-                        Success = true
-                    };
+                    return true;
                 }
-                else
-                {
-                    return new ApiResponse<bool>
-                    {
-                        Message = "Không tìm thấy sản phẩm cần xóa!",
-                        Success = false
-                    };
-                }
+                return false;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Delete error: {e.Message}");
-
-                return new ApiResponse<bool>
-                {
-                    Message = "Lỗi khi xóa sản phẩm: " + e.Message,
-                    Success = false
-                };
+                throw new Exception("Lỗi khi xóa sản phẩm: " + e.Message);
             }
         }
-        public async Task<ApiResponse<SanPhamDTO>> Update(SanPhamDTO sp)
+        public async Task<SanPhamDTO> Update(SanPhamDTO sp)
         {
             try
             {
@@ -162,22 +132,9 @@ namespace StoreManagementBE.BackendServer.Services
                     .FirstOrDefaultAsync(x => x.ProductID == sp.ProductID);
 
                 if (existingProduct == null)
-                    return new ApiResponse<SanPhamDTO>
-                    {
-                        Message = "Không tìm thấy sản phẩm cần cập nhật!",
-                        Success = false
-                    };
+                    return null;
 
-                // SỬA: Thêm await
-                bool duplicateBarcode = await _context.SanPhams
-                    .AnyAsync(x => x.Barcode == sp.Barcode && x.ProductID != sp.ProductID);
-
-                if (duplicateBarcode)
-                    return new ApiResponse<SanPhamDTO>
-                    {
-                        Message = "Mã vạch đã tồn tại, vui lòng nhập mã khác!",
-                        Success = false
-                    };
+                
 
                 // QUAN TRỌNG: Update từng property thay vì dùng AutoMapper
                 existingProduct.ProductName = sp.ProductName;
@@ -201,20 +158,11 @@ namespace StoreManagementBE.BackendServer.Services
 
                 var resultDTO = _mapper.Map<SanPhamDTO>(updatedProduct);
 
-                return new ApiResponse<SanPhamDTO>
-                {
-                    Message = "Cập nhật sản phẩm thành công!",
-                    DataDTO = resultDTO, // Sửa thành Data thay vì DataDTO
-                    Success = true
-                };
+                return resultDTO;
             }
             catch (Exception e)
             {
-                return new ApiResponse<SanPhamDTO>
-                {
-                    Message = "Lỗi khi cập nhật sản phẩm: " + e.Message,
-                    Success = false
-                };
+                throw new Exception("Lỗi khi cập nhật sản phẩm: " + e.Message);
             }
         }
 
@@ -264,90 +212,133 @@ namespace StoreManagementBE.BackendServer.Services
         }
         public async Task<List<SanPhamDTO>> getBySupplierID(int? supplier_id)
         {
-            //return _context.SanPhams.Include(sp => sp.Category)
-            //.Include(sp => sp.Supplier).Where(x => x.supplier_id == supplier_id).ToList();
-            var list = await _context.SanPhams.Include(sp => sp.Category)
-            .Include(sp => sp.Supplier).Where(x => x.SupplierID == supplier_id).ToListAsync();
-            return _mapper.Map<List<SanPhamDTO>>(list);
+            try
+            {
+                var list = await _context.SanPhams.Include(sp => sp.Category)
+                .Include(sp => sp.Supplier).Where(x => x.SupplierID == supplier_id).ToListAsync();
+                    return _mapper.Map<List<SanPhamDTO>>(list);
+            } catch (Exception e)
+            {
+                throw new Exception("Lỗi khi tìm sản phẩm theo nhà cung cấp: " + e.Message);
+            }
         }
         public async Task<List<SanPhamDTO>> getByCategoryID(int? category_id)
         {
-            var list = await _context.SanPhams.Include(sp => sp.Category)
-            .Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id).ToListAsync();
-            return _mapper.Map<List<SanPhamDTO>>(list);
+            try
+            {
+                var list = await _context.SanPhams.Include(sp => sp.Category)
+                .Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id).ToListAsync();
+                return _mapper.Map<List<SanPhamDTO>>(list);
+            } catch(Exception e)
+            {
+                throw new Exception("Lỗi khi tìm sản phẩm theo loại: " + e.Message);
+            }
         }
         public async Task<List<SanPhamDTO>> getProductsSortByPrice(string? order)
         {
-            var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier);
-            if(order.ToLower() == "desc")
+            try
             {
-                var list = await query.OrderByDescending(sp => sp.Price).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(list);
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier);
+                if (order.ToLower() == "desc")
+                {
+                    var list = await query.OrderByDescending(sp => sp.Price).ToListAsync();
+                    return _mapper.Map<List<SanPhamDTO>>(list);
+                }
+                var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
+                return _mapper.Map<List<SanPhamDTO>>(ls);
+            } catch (Exception e)
+            {
+                throw new Exception("Lỗi khi lấy danh sách sắp xếp theo yêu cầu: " + e.Message);
             }
-            var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
-            return _mapper.Map<List<SanPhamDTO>>(ls);
         }
         public async Task<List<SanPhamDTO>> getProductsBySupplierIDAndCategoryID(int? supplier_id, int? category_id)
         {
-            var ls = await _context.SanPhams.Include(sp => sp.Category)
+            try
+            {
+                var ls = await _context.SanPhams.Include(sp => sp.Category)
             .Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id && x.SupplierID == supplier_id).ToListAsync();
-            return _mapper.Map<List<SanPhamDTO>>(ls);
+                return _mapper.Map<List<SanPhamDTO>>(ls);
+            } catch (Exception e)
+            {
+                throw new Exception("Lỗi khi tìm sản phẩm theo nhà cung cấp và loại: " + e.Message);
+            }
         }
         public async Task<List<SanPhamDTO>> getProductsBySupplierIDAndPrice(int? supplier_id, string? order)
         {
-            var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.SupplierID == supplier_id);
-            if(order != "")
+            try
             {
-                if (order.ToLower() == "desc")
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.SupplierID == supplier_id);
+                if (order != "")
                 {
-                    var ls = await query.OrderByDescending(sp => sp.Price).ToListAsync();
+                    if (order.ToLower() == "desc")
+                    {
+                        var ls = await query.OrderByDescending(sp => sp.Price).ToListAsync();
+                        return _mapper.Map<List<SanPhamDTO>>(ls);
+                    }
+                }
+                else
+                {
+                    var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
                     return _mapper.Map<List<SanPhamDTO>>(ls);
                 }
-            } else
-            {
-                var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(ls);
-            }
 
-            var list = await query.OrderBy(sp => sp.Price).ToListAsync();
-            return _mapper.Map<List<SanPhamDTO>>(list);
+                var list = await query.OrderBy(sp => sp.Price).ToListAsync();
+                return _mapper.Map<List<SanPhamDTO>>(list);
+            } catch (Exception e)
+            {
+                throw new Exception("Lỗi khi lấy danh sách sản phẩm sắp xếp theo nhà cung cấp: " + e.Message);
+            }
         }
         public async Task<List<SanPhamDTO>> getProductsByCategoryIDAndPrice(int? category_id, string? order)
         {
-            var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id);
-            if(order != "")
+            try
             {
-                if (order.ToLower() == "desc")
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id);
+                if (order != "")
                 {
-                    var ls = await query.OrderByDescending(sp => sp.Price).ToListAsync();
+                    if (order.ToLower() == "desc")
+                    {
+                        var ls = await query.OrderByDescending(sp => sp.Price).ToListAsync();
+                        return _mapper.Map<List<SanPhamDTO>>(ls);
+                    }
+                }
+                else
+                {
+                    var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
                     return _mapper.Map<List<SanPhamDTO>>(ls);
                 }
-            } else
-            {
-                var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(ls);
-            }
 
-            var list = await query.OrderBy(sp => sp.Price).ToListAsync();
-            return _mapper.Map<List<SanPhamDTO>>(list);
+                var list = await query.OrderBy(sp => sp.Price).ToListAsync();
+                return _mapper.Map<List<SanPhamDTO>>(list);
+            } catch (Exception e)
+            {
+                throw new Exception("Lỗi khi lấy danh sách sản phẩm theo yêu cầu và loại: " + e.Message);
+            }
         }
         public async Task<List<SanPhamDTO>> getProductsBysupplierIDAndCategoryIDAndPrice(int? supplier_id, int? category_id, string? order)
         {
-            var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id && x.SupplierID == supplier_id);
-            if(order != "")
+            try
             {
-                var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(ls);
-            } else
-            {
-                if (order.ToLower() == "desc")
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id && x.SupplierID == supplier_id);
+                if (order != "")
                 {
-                    var ls = await query.OrderByDescending(sp => sp.Price).ToListAsync();
+                    var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
                     return _mapper.Map<List<SanPhamDTO>>(ls);
                 }
+                else
+                {
+                    if (order.ToLower() == "desc")
+                    {
+                        var ls = await query.OrderByDescending(sp => sp.Price).ToListAsync();
+                        return _mapper.Map<List<SanPhamDTO>>(ls);
+                    }
+                }
+                var list = await query.OrderBy(sp => sp.Price).ToListAsync();
+                return _mapper.Map<List<SanPhamDTO>>(list);
+            } catch (Exception e)
+            {
+                throw new Exception("Lỗi khi lấy danh sách sản phẩm theo yêu cầu, nhà cung cấp, loại: " + e.Message);
             }
-            var list = await query.OrderBy(sp => sp.Price).ToListAsync();
-            return _mapper.Map<List<SanPhamDTO>>(list);
         }
     }
 }

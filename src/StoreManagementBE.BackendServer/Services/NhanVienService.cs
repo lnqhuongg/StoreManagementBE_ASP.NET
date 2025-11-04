@@ -40,7 +40,7 @@ namespace StoreManagementBE.BackendServer.Services
                 keyword = keyword.ToLower();
                 query = query.Where(x =>
                     x.Username.ToLower().Contains(keyword) ||
-                    x.Full_name.ToLower().Contains(keyword) ||
+                    x.FullName.ToLower().Contains(keyword) ||
                     x.Role.ToLower().Contains(keyword));
             }
 
@@ -62,7 +62,7 @@ namespace StoreManagementBE.BackendServer.Services
                 }
 
                 var entity = _mapper.Map<NhanVien>(dto);
-                entity.Created_at = DateTime.Now;
+                entity.CreatedAt = DateTime.Now;
                 entity.Status = 1;
 
                 // TODO: Mã hóa mật khẩu trước khi lưu
@@ -114,7 +114,7 @@ namespace StoreManagementBE.BackendServer.Services
 
                 // Cập nhật các trường
                 existing.Username = dto.Username;
-                existing.Full_name = dto.Full_name;
+                existing.FullName = dto.FullName;
                 existing.Role = dto.Role;
                 existing.Status = dto.Status;
 
@@ -180,7 +180,7 @@ namespace StoreManagementBE.BackendServer.Services
         public async Task<bool> IsUsernameExist(string username, int? excludeId = null)
         {
             return await _context.NhanViens
-                .AnyAsync(x => x.Username == username && (excludeId == null || x.User_id != excludeId));
+                .AnyAsync(x => x.Username == username && (excludeId == null || x.UserId != excludeId));
         }
     }   
 }

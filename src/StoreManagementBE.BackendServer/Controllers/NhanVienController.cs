@@ -58,7 +58,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 
             return CreatedAtAction(
                 nameof(GetById),
-                new { id = result.DataDTO!.User_id },
+                new { id = result.DataDTO!.UserId},
                 result.DataDTO
             );
         }

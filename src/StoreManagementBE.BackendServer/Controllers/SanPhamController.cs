@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services;
 using StoreManagementBE.BackendServer.Services.Interfaces;
@@ -15,6 +15,7 @@ namespace StoreManagementBE.BackendServer.Controllers
     public class SanPhamController : ControllerBase
     {
         public readonly ISanPhamService _sanPhamService;
+        //private readonly IImageSer
         public SanPhamController(ISanPhamService sanPhamService)
         {
             _sanPhamService = sanPhamService;
@@ -87,7 +88,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] SanPhamDTO sp)
+        public async Task<IActionResult> Create([FromForm] SanPhamRequestDTO sp)
         {
             
             try
@@ -96,17 +97,18 @@ namespace StoreManagementBE.BackendServer.Controllers
                 {
                     return BadRequest(ModelState);
                 }
-                if (await _sanPhamService.checkExistBarcode(sp.Barcode) || await _sanPhamService.checkExistID(sp.ProductID))
+                if (await _sanPhamService.checkExistBarcode(sp.Barcode))
                 {
                     return Conflict(new ApiResponse<SanPhamDTO>
                     {
-                        Message = "Sản phẩm đã tồn tại hoặc trùng mã vạch!",
+                        Message = "Sản phẩm trùng mã vạch!",
                         Success = false
                     });
                 }
 
                 var newSP = await _sanPhamService.Create(sp);
-                return CreatedAtAction("Created products success!", new ApiResponse<SanPhamDTO> {
+                return Ok(new ApiResponse<SanPhamDTO>
+                { // Sửa thành Ok
                     Message = "Thêm sản phẩm thành công!",
                     DataDTO = newSP,
                     Success = true
@@ -121,21 +123,28 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] SanPhamDTO sp)
+        public async Task<IActionResult> Update(int id, [FromForm] SanPhamRequestDTO sp)
         {
             
             try
             {
-                if (await _sanPhamService.checkExistBarcode(sp.Barcode) == false || await _sanPhamService.checkExistID(id) == false)
+                if (await _sanPhamService.checkExistID(id) == false)
                 {
                     return NotFound(new ApiResponse<SanPhamDTO>
                     {
                         Message = "Sản phẩm không tồn tại!",
                         Success = false
                     });
+                } else if(await _sanPhamService.checkBarcodeExistForOtherProducts(id, sp.Barcode))
+                {
+                    return Conflict(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Trùng mã vạch!",
+                        Success = false
+                    });
                 }
 
-                var updateSP = await _sanPhamService.Update(sp);
+                    var updateSP = await _sanPhamService.Update(id, sp);
                 return Ok(new ApiResponse<SanPhamDTO>
                 {
                     Message = "Cập nhật sản phẩm thành công!",
@@ -183,31 +192,6 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
 
-        //[HttpPut("status/{id}")]
-        //public IActionResult UpdateStatus(int id)
-        //{
-        //    try
-        //    {
-        //        var result = _sanPhamService.UpdateStatus(id);
-        //        if (result)
-        //        {
-        //            return Ok(new
-        //            {
-        //                message = "Cập nhật trạng thái sản phẩm thành công!",
-        //                success = true
-        //            });
-        //        }
-        //        return BadRequest(new { message = "Cập nhật thất bại", success = false });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(new
-        //        {
-        //            message = ex.Message,
-        //            success = false
-        //        });
-        //    }
-        //}
 
         [HttpGet("search")]
         public async Task<IActionResult> SearchByKeyword([FromQuery] string keyword)

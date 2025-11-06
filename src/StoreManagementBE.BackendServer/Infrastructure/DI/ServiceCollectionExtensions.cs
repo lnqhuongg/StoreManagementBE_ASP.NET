@@ -13,12 +13,14 @@ namespace StoreManagementBE.BackendServer.Infrastructure.DI
             // Đăng ký tất cả service ở đây
             services.AddScoped<INhanVienService, NhanVienService>();
             services.AddScoped<ILoaiSanPhamService, LoaiSanPhamService>();
-            services.AddScoped<ISanPhamService, SanPhamService>();
-            services.AddScoped<INhaCungCapService, NhaCungCapService>();
-            services.AddScoped<IImageService, ImageService>();
-            services.AddScoped<IPhieuNhapService, PhieuNhapService>();
+<<<<<<<<< Temporary merge branch 1
+            //services.AddScoped<ISanPhamService, SanPhamService>();
+            //services.AddScoped<IPhieuNhapService, PhieuNhapService>();
             //services.AddScoped<IChiTietPhieuNhapService, ChiTietPhieuNhapService>();
-            services.AddScoped<IDonHangService, DonHangService>();
+            services.AddScoped<INhaCungCapService, NhaCungCapService>();
+=========
+            services.AddScoped<ISanPhamService, SanPhamService>();
+>>>>>>>>> Temporary merge branch 2
 
             return services;
         }

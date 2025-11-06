@@ -1,8 +1,8 @@
-﻿using AutoMapper;
+﻿// File: Mappings/MappingProfile.cs
+using AutoMapper;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Models.Entities;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StoreManagementBE.BackendServer.Mappings
 {
@@ -10,7 +10,7 @@ namespace StoreManagementBE.BackendServer.Mappings
     {
         public MappingProfile()
         {
-            // entity loaisanpham <-> loaisanphamDTO --- reservemap de map nguoc lai, nghia la tu DTO ve entity
+            // Loại sản phẩm
             CreateMap<LoaiSanPham, LoaiSanPhamDTO>().ReverseMap();
             CreateMap<PhieuNhap, PhieuNhapDTO>().ReverseMap();
             CreateMap<ChiTietPhieuNhap, ChiTietPhieuNhapDTO>().ReverseMap();

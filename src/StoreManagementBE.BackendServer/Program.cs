@@ -41,6 +41,7 @@ builder.Services.AddCors(options =>
 // dang ky controllers tu folder Controllers
 builder.Services.AddControllers();
 
+
 var app = builder.Build();
 
 // Configure pipeline

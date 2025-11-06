@@ -14,10 +14,10 @@ namespace StoreManagementBE.BackendServer.Infrastructure.DI
             services.AddScoped<INhanVienService, NhanVienService>();
             services.AddScoped<ILoaiSanPhamService, LoaiSanPhamService>();
             services.AddScoped<ISanPhamService, SanPhamService>();
-            services.AddScoped<IPhieuNhapService, PhieuNhapService>();
-            //services.AddScoped<IChiTietPhieuNhapService, ChiTietPhieuNhapService>();
             services.AddScoped<INhaCungCapService, NhaCungCapService>();
             services.AddScoped<IImageService, ImageService>();
+            services.AddScoped<IPhieuNhapService, PhieuNhapService>();
+
             return services;
         }
     }

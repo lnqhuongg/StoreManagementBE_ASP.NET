@@ -25,6 +25,10 @@ namespace StoreManagementBE.BackendServer.Mappings
 
             // entity nhacungcap <-> nhacungcapDTO
             CreateMap<NhaCungCap, NhaCungCapDTO>().ReverseMap();
+
+            // entity magiamgia <-> magiamgiaDTO
+            CreateMap<MaGiamGia, MaGiamGiaDTO>().ReverseMap();
+
         }
     }
 }

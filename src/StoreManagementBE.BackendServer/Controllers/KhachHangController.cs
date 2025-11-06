@@ -135,6 +135,26 @@ namespace StoreManagementBE.BackendServer.Controllers
                     });
                 }
 
+                // Kiểm tra trùng Phone
+                if (!string.IsNullOrEmpty(dto.Phone) && await _khService.CheckExistPhone(dto.Phone))
+                {
+                    return Conflict(new ApiResponse<KhachHangDTO>
+                    {
+                        Message = "Số điện thoại đã tồn tại!",
+                        Success = false
+                    });
+                }
+
+                // Kiểm tra trùng Email
+                if (!string.IsNullOrEmpty(dto.Email) && await _khService.CheckExistEmail(dto.Email))
+                {
+                    return Conflict(new ApiResponse<KhachHangDTO>
+                    {
+                        Message = "Email đã tồn tại!",
+                        Success = false
+                    });
+                }
+
                 dto.CustomerId = id;
                 var updated = await _khService.Update(dto);
 

@@ -15,7 +15,8 @@ namespace StoreManagementBE.BackendServer.Services
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
         private readonly IImageService _imageService;
-
+        private static readonly char[] Base62Chars =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".ToCharArray();
         public SanPhamService(ApplicationDbContext context, IMapper mapper, IImageService imageService)
         {
             _context = context;
@@ -69,6 +70,31 @@ namespace StoreManagementBE.BackendServer.Services
             return exist;
         }
 
+        private static string ToBase62(ulong number)
+        {
+            var result = new char[8];
+            int index = 7;
+
+            do
+            {
+                result[index--] = Base62Chars[number % 62];
+                number /= 62;
+            } while (number > 0 && index >= 0);
+
+            return new string(result, index + 1, 7 - index);
+        }
+
+        private string generateAutoBarcode()
+        {
+            var guid = Guid.NewGuid();
+            var bytes = guid.ToByteArray();
+
+            // Lấy 8 byte đầu từ GUID
+            var number = BitConverter.ToUInt64(bytes, 0);
+
+            return "SP" + ToBase62(number);
+        }
+
         public async Task<SanPhamDTO> Create(SanPhamRequestDTO sp)
         {
             try
@@ -91,7 +117,7 @@ namespace StoreManagementBE.BackendServer.Services
                 SanPham sanpham = new SanPham
                 {
                     ProductName = sp.ProductName,
-                    Barcode = sp.Barcode,
+                    Barcode = generateAutoBarcode(),
                     Price = sp.Price,
                     Unit = sp.Unit,
                     CreatedAt = DateTime.Now,

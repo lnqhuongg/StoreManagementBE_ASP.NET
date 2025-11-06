@@ -8,10 +8,10 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
         Task<List<NhaCungCapDTO>> GetAll();
         Task<NhaCungCapDTO?> GetById(int supplierId);
         List<NhaCungCap> SearchByKeyword(string keyword);
-        Task<ApiResponse<NhaCungCapDTO>> Create(NhaCungCapDTO nhaCungCapDTO);
-        Task<ApiResponse<NhaCungCapDTO>> Update(int id, NhaCungCapDTO nhaCungCapDTO);
-        Task<bool> IsSupplierIdExist(int supplierId);   //Dùng cho luồng GET/PUT/DELETE để quyết định trả 404 Not Found
-        Task<bool> IsSupplierExist(string name, string email, string phone, int? ignoreId = null);  //Dùng cho CREATE/UPDATE để trả 409 Conflict (hoặc 400) với thông điệp
-        //bool Delete(int id);
+        Task<NhaCungCapDTO> Create(NhaCungCapDTO dto);
+        Task<NhaCungCapDTO?> Update(int id, NhaCungCapDTO dto);
+        Task<bool> Delete(int id);
+        Task<bool> IsSupplierIdExist(int supplierId);
+        Task<bool> IsSupplierExist(string name, string email, string phone, int? ignoreId = null);
     }
 }

@@ -22,7 +22,7 @@ namespace StoreManagementBE.BackendServer.Services
         public async Task<List<PhieuNhapDTO>> GetAll()
         {
             var list = await _context.PhieuNhaps
-                //.Include(p => p.Staff)         // nạp luôn thông tin nhân viên
+                .Include(p => p.Staff)       
                 .Include(p => p.Supplier)
                 .Include(p => p.ImportDetails)
                 .ToListAsync();
@@ -34,7 +34,7 @@ namespace StoreManagementBE.BackendServer.Services
         {
             if (!isExist(id)) return null;
             var phieuNhap = await _context.PhieuNhaps
-                //.Include(p => p.Staff)
+                .Include(p => p.Staff)
                 .Include(p => p.Supplier)
                 .Include(p => p.ImportDetails)
                 .FirstOrDefaultAsync(p => p.ImportId == id);
@@ -60,6 +60,15 @@ namespace StoreManagementBE.BackendServer.Services
                         phieuNhap.SupplierId = existingSupplier.SupplierId;
                     }
                 }
+                if (phieuNhap.Staff != null && phieuNhap.Staff.UserId > 0)
+                {
+                    var existingStaff = await _context.NhanViens.FindAsync(phieuNhap.Staff.UserId);
+                    if (existingStaff != null)
+                    {
+                        phieuNhap.Staff = existingStaff;
+                        phieuNhap.UserId = existingStaff.UserId;
+                    }
+                }
 
                 _context.PhieuNhaps.Add(phieuNhap);
 
@@ -72,6 +81,7 @@ namespace StoreManagementBE.BackendServer.Services
                 {
                     // Nạp thêm navigation properties (nếu cần)
                     await _context.Entry(phieuNhap).Reference(p => p.Supplier).LoadAsync();
+                    await _context.Entry(phieuNhap).Reference(p => p.Staff).LoadAsync();
                     await _context.Entry(phieuNhap).Collection(p => p.ImportDetails).LoadAsync();
 
                     return _mapper.Map<PhieuNhapDTO>(phieuNhap);
@@ -95,6 +105,7 @@ namespace StoreManagementBE.BackendServer.Services
             {
                 var phieuNhap = await _context.PhieuNhaps
                     .Include(p => p.Supplier)
+                    .Include(p => p.Staff)
                     .FirstOrDefaultAsync(p => p.ImportId == phieuNhapDto.ImportId);
 
                 if (phieuNhap == null)
@@ -106,7 +117,6 @@ namespace StoreManagementBE.BackendServer.Services
                 // Gán lại các thuộc tính cơ bản
                 phieuNhap.ImportDate = phieuNhapDto.ImportDate;
                 phieuNhap.TotalAmount = phieuNhapDto.TotalAmount;
-                phieuNhap.UserId = phieuNhapDto.UserId;
 
                 // Gán lại SupplierId (nếu có)
                 if (phieuNhapDto.Supplier != null)
@@ -116,6 +126,13 @@ namespace StoreManagementBE.BackendServer.Services
 
                 // Không gán lại Supplier object để tránh lỗi tracked entity
                 phieuNhap.Supplier = null;
+
+                if (phieuNhapDto.Staff != null)
+                {
+                    phieuNhap.UserId = phieuNhapDto.Staff.UserId;
+                }
+                // Không gán lại Staff object để tránh lỗi tracked entity
+                phieuNhap.Staff = null;
 
                 // Đánh dấu entity là modified
                 _context.Entry(phieuNhap).State = EntityState.Modified;

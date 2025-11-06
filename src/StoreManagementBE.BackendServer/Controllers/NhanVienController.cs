@@ -1,3 +1,4 @@
+// Controllers/NhanVienController.cs
 using Microsoft.AspNetCore.Mvc;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Services.Interfaces;
@@ -46,29 +47,26 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] NhanVienDTO dto)
         {
-            // 1. Validate đầu vào
             if (!ModelState.IsValid)
                 return BadRequest(ModelState); // 400
 
-            // 2. Gọi Service
-            var result = await _service.Create(dto);
-
-            // 3. Xử lý kết quả
-            if (!result.Success)
+            try
             {
-                if (result.Message.Contains("tồn tại"))
-                    return Conflict(new { message = result.Message }); // 409
-
-                return BadRequest(new { message = result.Message }); // 400
+                var result = await _service.Create(dto);
+                return CreatedAtAction(
+                    nameof(GetById),
+                    new { id = result.UserId },  // Dùng UserId
+                    result
+                );
             }
-
-            // 4. Thành công → 201 Created
-            var resultDto = result.DataDTO;
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = resultDto!.UserId },  // Dùng UserId
-                resultDto
-            );
+            catch (Exception ex) when (ex.Message.Contains("tồn tại"))
+            {
+                return Conflict(new { message = ex.Message }); // 409
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message }); // 400
+            }
         }
 
         // PUT: api/users/{id}
@@ -78,20 +76,24 @@ namespace StoreManagementBE.BackendServer.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = await _service.Update(id, dto);
-
-            if (!result.Success)
+            try
             {
-                if (result.Message.Contains("không tìm thấy", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new { message = result.Message });
+                var result = await _service.Update(id, dto);
+                if (result == null)
+                    return NotFound(new { message = "Không tìm thấy nhân viên để cập nhật!" });
 
-                if (result.Message.Contains("tồn tại") || result.Message.Contains("sử dụng"))
-                    return Conflict(new { message = result.Message });
-
-                return BadRequest(new { message = result.Message });
+                return Ok(result);
             }
-
-            return Ok(result.DataDTO);
+            catch (Exception ex) when (ex.Message.Contains("sử dụng") || ex.Message.Contains("tồn tại"))
+            {
+                return Conflict(new { message = ex.Message }); // 409
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message }); // 400
+            }
         }
+
+    
     }
 }

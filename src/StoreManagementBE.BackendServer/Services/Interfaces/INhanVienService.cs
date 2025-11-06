@@ -7,9 +7,10 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
     {
         Task<List<NhanVienDTO>> GetAll();
         Task<NhanVienDTO?> GetById(int userId);
-        List<NhanVienDTO> SearchByKeyword(string keyword); 
-        Task<ApiResponse<NhanVienDTO>> Create(NhanVienDTO dto);
-        Task<ApiResponse<NhanVienDTO>> Update(int id, NhanVienDTO dto);
-        Task<ApiResponse<bool>> Delete(int userId);
+        List<NhanVien> SearchByKeyword(string keyword);
+        Task<NhanVienDTO> Create(NhanVienDTO dto);
+        Task<NhanVienDTO?> Update(int id, NhanVienDTO dto);
+        Task<bool> isUsernameExist(string username);
+        Task<bool> isUserExist(int userId);
     }
 }

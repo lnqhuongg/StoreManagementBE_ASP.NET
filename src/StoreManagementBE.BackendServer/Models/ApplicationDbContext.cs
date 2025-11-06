@@ -21,5 +21,7 @@ namespace StoreManagementBE.BackendServer.Models
         public DbSet<PhieuNhap> PhieuNhaps { set; get; }
         public DbSet<SanPham> SanPhams { set; get; }
         public DbSet<ThanhToan> ThanhToans { set; get; }
+
+        public DbSet<TonKho> TonKhos { set; get; }
     }
 }

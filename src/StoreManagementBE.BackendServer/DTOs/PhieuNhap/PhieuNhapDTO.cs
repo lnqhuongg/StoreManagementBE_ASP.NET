@@ -1,7 +1,7 @@
-﻿
+﻿using StoreManagementBE.BackendServer.DTOs.ChiTietPhieuNhap;
 using System.ComponentModel.DataAnnotations;
 
-namespace StoreManagementBE.BackendServer.DTOs
+namespace StoreManagementBE.BackendServer.DTOs.PhieuNhap
 {
     public class PhieuNhapDTO
     {

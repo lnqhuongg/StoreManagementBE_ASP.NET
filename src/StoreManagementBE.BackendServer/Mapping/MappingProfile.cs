@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.ChiTietPhieuNhap;
+using StoreManagementBE.BackendServer.DTOs.PhieuNhap;
 using StoreManagementBE.BackendServer.Models.Entities;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 

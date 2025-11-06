@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.Models;
-using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
 using AutoMapper;
+using StoreManagementBE.BackendServer.DTOs.PhieuNhap;
 
 namespace StoreManagementBE.BackendServer.Services
 {
@@ -22,9 +22,10 @@ namespace StoreManagementBE.BackendServer.Services
         public async Task<List<PhieuNhapDTO>> GetAll()
         {
             var list = await _context.PhieuNhaps
-                .Include(p => p.Staff)       
+                .Include(p => p.Staff)
                 .Include(p => p.Supplier)
                 .Include(p => p.ImportDetails)
+                    .ThenInclude(d => d.Product)
                 .ToListAsync();
             return _mapper.Map<List<PhieuNhapDTO>>(list);
         }
@@ -37,6 +38,7 @@ namespace StoreManagementBE.BackendServer.Services
                 .Include(p => p.Staff)
                 .Include(p => p.Supplier)
                 .Include(p => p.ImportDetails)
+                    .ThenInclude(d => d.Product)
                 .FirstOrDefaultAsync(p => p.ImportId == id);
             return _mapper.Map<PhieuNhapDTO>(phieuNhap);
         }
@@ -143,6 +145,7 @@ namespace StoreManagementBE.BackendServer.Services
                 {
                     // Nạp lại navigation property sau khi cập nhật
                     await _context.Entry(phieuNhap).Reference(p => p.Supplier).LoadAsync();
+                    await _context.Entry(phieuNhap).Reference(p => p.Staff).LoadAsync();
                     return _mapper.Map<PhieuNhapDTO>(phieuNhap);
                 }
                 else
@@ -189,5 +192,91 @@ namespace StoreManagementBE.BackendServer.Services
         {
             throw new NotImplementedException();
         }
+
+
+        // add phieu nhap bao gom chi tiet
+        public async Task<PhieuNhapDTO> CreateWithDetails(CreatePhieuNhapDTO phieuNhapDto)
+        {
+            if (phieuNhapDto.ImportDetails == null || !phieuNhapDto.ImportDetails.Any())
+                throw new Exception("Phiếu nhập phải có ít nhất 1 chi tiết!");
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Lấy entity thật từ DB
+                var supplier = await _context.NhaCungCaps.FindAsync(phieuNhapDto.SupplierId)
+                    ?? throw new Exception($"Không tìm thấy nhà cung cấp ID = {phieuNhapDto.SupplierId}");
+
+                var staff = await _context.NhanViens.FindAsync(phieuNhapDto.UserId)
+                    ?? throw new Exception($"Không tìm thấy nhân viên ID = {phieuNhapDto.UserId}");
+
+                // Tạo phiếu nhập
+                var phieuNhap = new PhieuNhap
+                {
+                    ImportDate = DateTime.UtcNow,
+                    Supplier = supplier,
+                    Staff = staff,
+                    TotalAmount = phieuNhapDto.ImportDetails.Sum(d => d.Quantity * d.Price)
+                };
+
+                _context.PhieuNhaps.Add(phieuNhap);
+                await _context.SaveChangesAsync();
+
+                // Thêm chi tiết phiếu nhập
+                foreach (var detailDto in phieuNhapDto.ImportDetails)
+                {
+                    var product = await _context.SanPhams.FindAsync(detailDto.ProductId)
+                        ?? throw new Exception($"Không tìm thấy sản phẩm ID = {detailDto.ProductId}");
+
+                    var detail = new ChiTietPhieuNhap
+                    {
+                        ImportId = phieuNhap.ImportId,
+                        Product = product,
+                        Quantity = detailDto.Quantity,
+                        Price = detailDto.Price,
+                        Subtotal = detailDto.Quantity * detailDto.Price
+                    };
+
+                    _context.ChiTietPhieuNhaps.Add(detail);
+
+                    // cập nhật tồn kho
+                    var tonKho = await _context.TonKhos.FirstOrDefaultAsync(tk => tk.ProductId == product.ProductID);
+                    if (tonKho != null)
+                    {
+                        tonKho.Quantity += detailDto.Quantity;
+                        _context.Entry(tonKho).State = EntityState.Modified;
+                    }
+                    else
+                    {
+                        // nếu chưa có tồn kho thì tạo mới
+                        var newTonKho = new TonKho
+                        {
+                            ProductId = detailDto.ProductId,
+                            Quantity = detailDto.Quantity
+                        };
+                        _context.TonKhos.Add(newTonKho);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                // 🔹 Lấy lại entity đầy đủ để trả về
+                var created = await _context.PhieuNhaps
+                    .Include(p => p.Supplier)
+                    .Include(p => p.Staff)
+                    .Include(p => p.ImportDetails)
+                        .ThenInclude(d => d.Product)
+                    .FirstAsync(p => p.ImportId == phieuNhap.ImportId);
+
+                return _mapper.Map<PhieuNhapDTO>(created);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
     }
 }
+

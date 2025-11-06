@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.PhieuNhap;
 using StoreManagementBE.BackendServer.Services.Interfaces;
 
 namespace StoreManagementBE.BackendServer.Controllers
@@ -9,11 +9,9 @@ namespace StoreManagementBE.BackendServer.Controllers
     public class PhieuNhapController : ControllerBase
     {
         private readonly IPhieuNhapService _phieuNhapService;
-        private readonly INhaCungCapService _nhaCungCapService;
-        public PhieuNhapController(IPhieuNhapService phieuNhapService, INhaCungCapService nhaCungCapService)
+        public PhieuNhapController(IPhieuNhapService phieuNhapService)
         {
             _phieuNhapService = phieuNhapService;
-            _nhaCungCapService = nhaCungCapService;
         }
 
         //get all
@@ -26,7 +24,7 @@ namespace StoreManagementBE.BackendServer.Controllers
             {
                 response.Success = false;
                 response.Message = "Không có phiếu nhập nào!";
-                return NotFound(response);
+                return NoContent();
             }
 
             response.Success = true;
@@ -60,7 +58,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 
         //create
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] DTOs.PhieuNhapDTO phieuNhapDto)
+        public async Task<IActionResult> Create([FromBody] PhieuNhapDTO phieuNhapDto)
         {
             Console.WriteLine("Received PhieuNhapDTO: " + System.Text.Json.JsonSerializer.Serialize(phieuNhapDto));
             // lấy thời gian hiện tại
@@ -127,6 +125,31 @@ namespace StoreManagementBE.BackendServer.Controllers
         {
             var result = _phieuNhapService.SearchByKeyword(keyword);
             return Ok(result);
+        }
+
+        // create phieu nhap voi chi tiet
+        [HttpPost("with-details")]
+        public async Task<IActionResult> CreateWithDetails([FromBody] CreatePhieuNhapDTO dto)
+        {
+            try
+            {
+                Console.WriteLine("Received imports: " + System.Text.Json.JsonSerializer.Serialize(dto));
+                var result = await _phieuNhapService.CreateWithDetails(dto);
+                return Ok(new ApiResponse<PhieuNhapDTO>
+                {
+                    Success = true,
+                    Message = "Thêm phiếu nhập và chi tiết thành công!",
+                    DataDTO = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse<PhieuNhapDTO>
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
         }
 
     }

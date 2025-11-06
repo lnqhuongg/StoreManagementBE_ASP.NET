@@ -31,7 +31,12 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         [Column(TypeName = "decimal(10,2)")]
         public decimal Subtotal { get; set; }
 
+        [Required]
+        [ForeignKey(nameof(ProductId))]
+        public SanPham Product { get; set; }
+
         [JsonIgnore]
+        [Required]
         [ForeignKey(nameof(ImportId))]
         public PhieuNhap Import { get; set; }
 

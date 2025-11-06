@@ -1,5 +1,33 @@
 @base = http://localhost:5224
 
 ### Lay tat ca loai san pham
-GET {{base}}/api/loaisanpham
+
+POST http://localhost:5224/api/imports/with-details
+Content-Type: application/json
 Accept: application/json
+
+{
+  "importDate": "2025-11-06T10:30:00",
+  "supplier": {
+    "supplierId": 1
+  },
+  "staff": {
+    "userId": 1
+  },
+  "importDetails": [
+    {
+      "product": {
+        "productId": 2
+      },
+      "quantity": 10,
+      "price": 25000
+    },
+    {
+      "product": {
+        "productId": 3
+      },
+      "quantity": 5,
+      "price": 30000
+    }
+  ]
+}

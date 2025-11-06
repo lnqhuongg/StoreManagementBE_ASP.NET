@@ -18,7 +18,7 @@ namespace StoreManagementBE.BackendServer.Services
             _mapper = mapper;
         }
 
-        //get all suppliers
+        //get all suppliers 
         public async Task<List<NhaCungCapDTO>> GetAll()
         {
             var list = await _context.NhaCungCaps.ToListAsync();
@@ -86,6 +86,23 @@ namespace StoreManagementBE.BackendServer.Services
             catch (Exception ex)
             {
                 throw new Exception("Lỗi khi cập nhật nhà cung cấp: " + ex.Message);
+            }
+        }
+
+        public async Task<bool> Delete(int id)
+        {
+            try
+            {
+                var existing = await _context.NhaCungCaps.FirstOrDefaultAsync(x => x.SupplierId == id);
+                if (existing == null) return false;
+
+                _context.NhaCungCaps.Remove(existing);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Lỗi khi xoá nhà cung cấp: " + ex.Message);
             }
         }
 

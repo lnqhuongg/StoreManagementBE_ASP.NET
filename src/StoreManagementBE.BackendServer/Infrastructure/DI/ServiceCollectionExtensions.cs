@@ -17,6 +17,8 @@ namespace StoreManagementBE.BackendServer.Infrastructure.DI
             services.AddScoped<INhaCungCapService, NhaCungCapService>();
             services.AddScoped<IImageService, ImageService>();
             services.AddScoped<IPhieuNhapService, PhieuNhapService>();
+            //services.AddScoped<IChiTietPhieuNhapService, ChiTietPhieuNhapService>();
+            services.AddScoped<IDonHangService, DonHangService>();
 
             return services;
         }

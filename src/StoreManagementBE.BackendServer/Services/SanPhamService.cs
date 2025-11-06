@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Enum;
 using StoreManagementBE.BackendServer.Models;
 using StoreManagementBE.BackendServer.Models.Entities;
@@ -14,11 +14,13 @@ namespace StoreManagementBE.BackendServer.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IImageService _imageService;
 
-        public SanPhamService(ApplicationDbContext context, IMapper mapper)
+        public SanPhamService(ApplicationDbContext context, IMapper mapper, IImageService imageService)
         {
             _context = context;
             _mapper = mapper;
+            _imageService = imageService;
         }
 
         public async Task<List<SanPhamDTO>> GetAll()
@@ -60,11 +62,31 @@ namespace StoreManagementBE.BackendServer.Services
             return exists;
         }
 
-        public async Task<SanPhamDTO> Create(SanPhamDTO sp)
+        public async Task<bool> checkBarcodeExistForOtherProducts(int id, string barcode)
+        {
+            var sanpham = await GetById(id);
+            var exist = await _context.SanPhams.AnyAsync(x => x.Barcode == sanpham.Barcode && x.ProductID != sanpham.ProductID);
+            return exist;
+        }
+
+        public async Task<SanPhamDTO> Create(SanPhamRequestDTO sp)
         {
             try
             {
-                
+
+                string imageUrl = null;
+
+                // Xử lý upload ảnh nếu có
+                if (sp.ImageUrl != null && sp.ImageUrl.Length > 0)
+                {
+                    var uploadResult = await _imageService.SaveImageAsync(sp.ImageUrl);
+                    if (uploadResult.Success && uploadResult.Data != null)
+                    {
+                        imageUrl = uploadResult.Data.Url;
+                    }
+                }
+
+
                 // Tạo entity sản phẩm mới
                 SanPham sanpham = new SanPham
                 {
@@ -74,9 +96,9 @@ namespace StoreManagementBE.BackendServer.Services
                     Unit = sp.Unit,
                     CreatedAt = DateTime.Now,
                     Status = sp.Status,
-
-                    CategoryID = sp.Category?.CategoryId,
-                    SupplierID = sp.Supplier?.SupplierId,
+                    ImageUrl = imageUrl,
+                    CategoryID = sp.CategoryID,
+                    SupplierID = sp.SupplierID,
                 };
 
 
@@ -123,13 +145,13 @@ namespace StoreManagementBE.BackendServer.Services
                 throw new Exception("Lỗi khi xóa sản phẩm: " + e.Message);
             }
         }
-        public async Task<SanPhamDTO> Update(SanPhamDTO sp)
+        public async Task<SanPhamDTO> Update(int id, SanPhamRequestDTO sp)
         {
             try
             {
                 // SỬA: Thêm await
                 var existingProduct = await _context.SanPhams
-                    .FirstOrDefaultAsync(x => x.ProductID == sp.ProductID);
+                    .FirstOrDefaultAsync(x => x.ProductID == id);
 
                 if (existingProduct == null)
                     return null;
@@ -144,8 +166,30 @@ namespace StoreManagementBE.BackendServer.Services
                 existingProduct.Status = sp.Status;
 
                 // CHỈ update ID, không update navigation objects
-                existingProduct.CategoryID = sp.Category?.CategoryId;
-                existingProduct.SupplierID = sp.Supplier?.SupplierId;
+                existingProduct.CategoryID = sp.CategoryID;
+                existingProduct.SupplierID = sp.SupplierID;
+                if (sp.ImageUrl != null && sp.ImageUrl.Length > 0)
+                {
+                    // 1. Xóa ảnh cũ nếu có
+                    if (!string.IsNullOrEmpty(existingProduct.ImageUrl))
+                    {
+                        var oldFileName = Path.GetFileName(existingProduct.ImageUrl);
+                        await _imageService.DeleteImageAsync(oldFileName);
+                    }
+
+                    // 2. Upload ảnh mới và lấy URL
+                    var uploadResult = await _imageService.SaveImageAsync(sp.ImageUrl);
+                    if (uploadResult.Success && uploadResult.Data != null)
+                    {
+                        existingProduct.ImageUrl = uploadResult.Data.Url; // Lưu URL vào database
+                        Console.WriteLine($"✅ Đã upload ảnh mới: {uploadResult.Data.Url}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"❌ Lỗi upload ảnh: {uploadResult.Message}");
+                        // Có thể giữ nguyên ảnh cũ hoặc xử lý lỗi
+                    }
+                }
 
                 // KHÔNG cần gọi Update() vì Entity Framework đang track entity
                 await _context.SaveChangesAsync();
@@ -154,7 +198,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var updatedProduct = await _context.SanPhams
                     .Include(x => x.Category)
                     .Include(x => x.Supplier)
-                    .FirstOrDefaultAsync(x => x.ProductID == sp.ProductID);
+                    .FirstOrDefaultAsync(x => x.ProductID == id);
 
                 var resultDTO = _mapper.Map<SanPhamDTO>(updatedProduct);
 

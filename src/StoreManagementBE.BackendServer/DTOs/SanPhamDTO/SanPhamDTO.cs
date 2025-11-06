@@ -1,6 +1,6 @@
 ﻿using StoreManagementBE.BackendServer.Models.Entities;
 
-namespace StoreManagementBE.BackendServer.DTOs
+namespace StoreManagementBE.BackendServer.DTOs.SanPhamDTO
 {
     public class SanPhamDTO
     {
@@ -9,11 +9,12 @@ namespace StoreManagementBE.BackendServer.DTOs
         public int? CategoryID { get; set; }
         public LoaiSanPhamDTO Category { get; set; }
         public NhaCungCapDTO Supplier { get; set; }
-        public string ProductName { get; set; }
-        public string Barcode { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string Barcode { get; set; } = string.Empty;
         public decimal Price { get; set; }
-        public string Unit { get; set; }
+        public string Unit { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+        public string? ImageUrl { get; set; }
         public int Status { get; set; }
 
     }

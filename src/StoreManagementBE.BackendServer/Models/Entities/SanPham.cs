@@ -41,23 +41,12 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         [Column("created_at", TypeName = "timestamp")]
         public DateTime CreatedAt { get; set; }
 
+        [Column("image_url", TypeName = "varchar(500)")] // Thêm trường này
+        public string? ImageUrl { get; set; }
+
         [Column("status", TypeName = "bit(1)")]
         public int Status { get; set; }
 
-        //public SanPham(int product_id, int? category_id, LoaiSanPham? category, int? supplier_id, NhaCungCap? supplier, string product_name, string barcode, decimal price, UnitEnum unit, DateTime created_at, int status)
-        //{
-        //    this.product_id = product_id;
-        //    this.category_id = category_id;
-        //    Category = category;
-        //    this.supplier_id = supplier_id;
-        //    Supplier = supplier;
-        //    this.product_name = product_name;
-        //    this.barcode = barcode;
-        //    this.price = price;
-        //    this.unit = unit;
-        //    this.created_at = created_at;
-        //    this.status = status;
-        //}
         public SanPham() { }
     }
 }

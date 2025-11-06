@@ -18,9 +18,7 @@ namespace StoreManagementBE.BackendServer.Infrastructure.DI
             //services.AddScoped<IPhieuNhapService, PhieuNhapService>();
             //services.AddScoped<IChiTietPhieuNhapService, ChiTietPhieuNhapService>();
             services.AddScoped<INhaCungCapService, NhaCungCapService>();
-=========
-            services.AddScoped<ISanPhamService, SanPhamService>();
->>>>>>>>> Temporary merge branch 2
+            services.AddScoped<IMaGiamGiaService, MaGiamGiaService>();
 
             return services;
         }

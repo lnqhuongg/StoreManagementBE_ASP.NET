@@ -15,7 +15,7 @@ namespace StoreManagementBE.BackendServer.DTOs.SanPhamDTO
         public string Unit { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string? ImageUrl { get; set; }
-        public int? stock { get; set; } 
+        //public int? stock { get; set; } 
 
         public int Status { get; set; }
 

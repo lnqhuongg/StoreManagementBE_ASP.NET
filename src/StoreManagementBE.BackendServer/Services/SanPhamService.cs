@@ -98,7 +98,6 @@ namespace StoreManagementBE.BackendServer.Services
                     Status = sp.Status,
                     ImageUrl = imageUrl,
                     CategoryID = sp.CategoryID,
-                    stock = sp.stock,
                     SupplierID = sp.SupplierID,
                 };
 
@@ -164,7 +163,6 @@ namespace StoreManagementBE.BackendServer.Services
                 existingProduct.Barcode = sp.Barcode;
                 existingProduct.Price = sp.Price;
                 existingProduct.Unit = sp.Unit;
-                existingProduct.stock = sp.stock;
                 existingProduct.Status = sp.Status;
 
                 // CHỈ update ID, không update navigation objects

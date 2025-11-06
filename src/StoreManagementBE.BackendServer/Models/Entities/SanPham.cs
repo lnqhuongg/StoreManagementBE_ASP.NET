@@ -44,8 +44,8 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         [Column("image_url", TypeName = "varchar(500)")] // Thêm trường này
         public string? ImageUrl { get; set; }
 
-        [Column("stock", TypeName = "int")]
-        public int? stock { get; set; }
+        //[Column("stock", TypeName = "int")]
+        //public int? stock { get; set; }
 
         [Column("status", TypeName = "bit(1)")]
         public int Status { get; set; }

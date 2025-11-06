@@ -12,7 +12,7 @@
         public string Unit { get; set; }
         //public DateTime CreatedAt { get; set; }
         public IFormFile? ImageUrl { get; set; }
-        public int? stock { get; set; } = 0;
+        //public int? stock { get; set; } = 0;
         public int Status { get; set; }
     }
 }

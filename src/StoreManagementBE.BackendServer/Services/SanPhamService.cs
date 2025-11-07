@@ -112,12 +112,17 @@ namespace StoreManagementBE.BackendServer.Services
                     }
                 }
 
+                string bc = generateAutoBarcode();
+                while(await checkExistBarcode(bc) == true)
+                {
+                    bc = generateAutoBarcode();
+                }
 
                 // Tạo entity sản phẩm mới
                 SanPham sanpham = new SanPham
                 {
                     ProductName = sp.ProductName,
-                    Barcode = generateAutoBarcode(),
+                    Barcode = bc,
                     Price = sp.Price,
                     Unit = sp.Unit,
                     CreatedAt = DateTime.Now,
@@ -271,7 +276,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var list = await _context.SanPhams
                             .Include(sp => sp.Category)
                             .Include(sp => sp.Supplier)
-                            .Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()))
+                            .Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()) && x.Barcode.ToLower().Contains(keyword.ToLower()))
                             .ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(list);
             }
@@ -409,8 +414,7 @@ namespace StoreManagementBE.BackendServer.Services
                 // Search by keyword
                 if (!string.IsNullOrEmpty(keyword))
                 {
-                    query = query.Where(p =>
-                        p.ProductName.Contains(keyword));
+                    query = query.Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()) && x.Barcode.ToLower().Contains(keyword.ToLower()));
                 }
 
                 // Sort by price

@@ -28,6 +28,8 @@ builder.Services.Configure<StaticFileOptions>(options =>
     };
 });
 
+
+// cai nay de tranh tinh trang bi loi khi backend va frontend chay khac port
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>

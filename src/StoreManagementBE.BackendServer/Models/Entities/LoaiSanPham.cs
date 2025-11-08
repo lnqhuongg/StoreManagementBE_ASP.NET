@@ -15,5 +15,7 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         [Required (ErrorMessage = "Tên loại sản phẩm không được trống")]
         [Column("category_name", TypeName = "varchar(100")]
         public string CategoryName { get; set; } = "";
+
+        public ICollection<SanPham> SanPhams { get; set; } = new List<SanPham>();
     }
 }

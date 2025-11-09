@@ -1,9 +1,7 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Services.Interfaces;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace StoreManagementBE.BackendServer.Controllers
 {
@@ -21,22 +19,21 @@ namespace StoreManagementBE.BackendServer.Controllers
 
         // lay tat ca
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 5, string keyword = "")
         {
             try
             {
-                var list = await _loaiSpService.GetAll();
-                if (list.Count > 0)
+                // gọi service lấy 5 cái bản ghi theo số trang 
+                var listDTO = await _loaiSpService.GetAll(page, pageSize, keyword);
+
+                var response = new ApiResponse<PagedResult<LoaiSanPhamDTO>>
                 {
-                    var api = new ApiResponse<List<LoaiSanPhamDTO>>
-                    {
-                        Message = "Lấy danh sách sản phẩm thành công!",
-                        DataDTO = list,
-                        Success = true
-                    };
-                    return Ok(api);
-                }
-                else return NoContent();
+                    Success = true,
+                    Message = "Lấy danh sách loại sản phẩm thành công!",
+                    DataDTO = listDTO
+                };
+
+                return Ok(response);
             } 
             catch (Exception ex)
             {
@@ -50,6 +47,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 
         // lay theo id
         [HttpGet("{id}")]
+        [ActionName("GetById")]
         public async Task<IActionResult> GetById(int id)
         {
             try
@@ -104,12 +102,16 @@ namespace StoreManagementBE.BackendServer.Controllers
 
                 var loaiDTO = await _loaiSpService.Create(loaiSanPhamDTO);
 
-                return CreatedAtAction("Tạo sản phẩm thành công", new ApiResponse<LoaiSanPhamDTO>
-                {
-                    Message = "Thêm sản phẩm thành công!",
-                    DataDTO = loaiDTO,
-                    Success = true
-                });
+                return CreatedAtAction(
+                    "GetById",
+                    new { id = loaiDTO.CategoryId }, // THIẾU DÒNG NÀY → LỖI
+                    new ApiResponse<LoaiSanPhamDTO>
+                    {
+                        Message = "Thêm sản phẩm thành công!",
+                        DataDTO = loaiDTO,
+                        Success = true
+                    }
+                );
             }
             catch (Exception ex)
             {
@@ -134,21 +136,31 @@ namespace StoreManagementBE.BackendServer.Controllers
 
                 if (await _loaiSpService.isCategoryExist(id))
                 {
+                    
+                    var loaiDTO = await _loaiSpService.Update(id, loaiSanPhamDTO);
+
+                    if(await _loaiSpService.isCategoryNameExist(loaiSanPhamDTO.CategoryName, id)) {
+                        return Conflict(new ApiResponse<SanPhamDTO>
+                        {
+                            Message = "Tên loại sản phẩm đã tồn tại!",
+                            Success = false
+                        });
+                    }
+
+                    return Ok(new ApiResponse<LoaiSanPhamDTO>
+                    {
+                        Message = "Cập nhật sản phẩm thành công!",
+                        DataDTO = loaiDTO,
+                        Success = true
+                    });
+                } else
+                {
                     return NotFound(new ApiResponse<SanPhamDTO>
                     {
                         Message = "Mã loại sản phẩm không tồn tại!",
                         Success = false
                     });
                 }
-
-                var loaiDTO = await _loaiSpService.Update(id, loaiSanPhamDTO);
-
-                return Ok(new ApiResponse<LoaiSanPhamDTO>
-                {
-                    Message = "Cập nhật sản phẩm thành công!",
-                    DataDTO = loaiDTO,
-                    Success = true
-                });
             }
             catch (Exception ex)
             {
@@ -170,17 +182,26 @@ namespace StoreManagementBE.BackendServer.Controllers
                 {
                     return BadRequest(ModelState);
                 }
-
-                if (await _loaiSpService.isCategoryExist(id))
+                var exists = await _loaiSpService.isCategoryExist(id);
+                if (!exists)
                 {
-                    return NotFound(new ApiResponse<SanPhamDTO>
+                    return NotFound(new ApiResponse<LoaiSanPhamDTO>
                     {
                         Message = "Mã loại sản phẩm không tồn tại!",
                         Success = false
                     });
                 }
 
-                var result = _loaiSpService.Delete(id);
+                var result = await _loaiSpService.Delete(id); // AWAIT ĐÂY
+
+                if (!result)
+                {
+                    return BadRequest(new ApiResponse<LoaiSanPhamDTO>
+                    {
+                        Message = "Xóa thất bại!",
+                        Success = false
+                    });
+                }
 
                 return NoContent();
             }

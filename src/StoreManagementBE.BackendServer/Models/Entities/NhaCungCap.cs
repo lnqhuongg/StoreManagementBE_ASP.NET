@@ -28,6 +28,6 @@ namespace StoreManagementBE.BackendServer.Models.Entities
 
         [Required]
         [Column("status", TypeName = "bit(1)")]
-        public bool Status { get; set; }
+        public int Status { get; set; }
     }
 }

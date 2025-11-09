@@ -1,9 +1,10 @@
-﻿using AutoMapper;
+﻿// File: Mappings/MappingProfile.cs
+using AutoMapper;
 using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.DTOs.ChiTietPhieuNhap;
 using StoreManagementBE.BackendServer.DTOs.PhieuNhap;
 using StoreManagementBE.BackendServer.Models.Entities;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace StoreManagementBE.BackendServer.Mappings
 {
@@ -13,7 +14,10 @@ namespace StoreManagementBE.BackendServer.Mappings
         {
             // entity loaisanpham <-> loaisanphamDTO --- reservemap de map nguoc lai, nghia la tu DTO ve entity
             CreateMap<LoaiSanPham, LoaiSanPhamDTO>().ReverseMap();
+
+            // entity phieunhap <-> phieunhapDTO
             CreateMap<PhieuNhap, PhieuNhapDTO>().ReverseMap();
+            // entity chitietphieunhap <-> chitietphieunhapDTO
             CreateMap<ChiTietPhieuNhap, ChiTietPhieuNhapDTO>().ReverseMap();
 
             // entity nhacungcap <-> nhacungcapDTO
@@ -27,6 +31,24 @@ namespace StoreManagementBE.BackendServer.Mappings
 
             // entity nhacungcap <-> nhacungcapDTO
             CreateMap<NhaCungCap, NhaCungCapDTO>().ReverseMap();
+
+            // entity donhang <-> donhangDTO
+            CreateMap<DonHang, DonHangDTO>().ReverseMap();
+
+            // entity chitietdonhang <-> chitietdonhangDTO
+            CreateMap<ChiTietDonHang, ChiTietDonHangDTO>().ReverseMap();
+
+            // entity thanhtoan <-> thanhtoanDTO
+            CreateMap<ThanhToan, ThanhToanDTO>().ReverseMap();
+
+            // entity khachhang <-> khachhangDTO
+            CreateMap<KhachHang, KhachHangDTO>().ReverseMap();
+
+            // entity magiamgia <-> magiamgiaDTO
+            CreateMap<MaGiamGia, MaGiamGiaDTO>().ReverseMap();
+
+            // entity tonkho <-> tonkhoDTO
+            CreateMap<TonKho, TonKhoDTO>().ReverseMap();
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Enum;
 using StoreManagementBE.BackendServer.Models;
 using StoreManagementBE.BackendServer.Models.Entities;
@@ -14,11 +14,14 @@ namespace StoreManagementBE.BackendServer.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
-
-        public SanPhamService(ApplicationDbContext context, IMapper mapper)
+        private readonly IImageService _imageService;
+        private static readonly char[] Base62Chars =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".ToCharArray();
+        public SanPhamService(ApplicationDbContext context, IMapper mapper, IImageService imageService)
         {
             _context = context;
             _mapper = mapper;
+            _imageService = imageService;
         }
 
         public async Task<List<SanPhamDTO>> GetAll()
@@ -60,23 +63,73 @@ namespace StoreManagementBE.BackendServer.Services
             return exists;
         }
 
-        public async Task<SanPhamDTO> Create(SanPhamDTO sp)
+        public async Task<bool> checkBarcodeExistForOtherProducts(int id, string barcode)
+        {
+            var sanpham = await GetById(id);
+            var exist = await _context.SanPhams.AnyAsync(x => x.Barcode == sanpham.Barcode && x.ProductID != sanpham.ProductID);
+            return exist;
+        }
+
+        private static string ToBase62(ulong number)
+        {
+            var result = new char[8];
+            int index = 7;
+
+            do
+            {
+                result[index--] = Base62Chars[number % 62];
+                number /= 62;
+            } while (number > 0 && index >= 0);
+
+            return new string(result, index + 1, 7 - index);
+        }
+
+        private string generateAutoBarcode()
+        {
+            var guid = Guid.NewGuid();
+            var bytes = guid.ToByteArray();
+
+            // Lấy 8 byte đầu từ GUID
+            var number = BitConverter.ToUInt64(bytes, 0);
+
+            return "SP" + ToBase62(number);
+        }
+
+        public async Task<SanPhamDTO> Create(SanPhamRequestDTO sp)
         {
             try
             {
-                
+
+                string imageUrl = null;
+
+                // Xử lý upload ảnh nếu có
+                if (sp.ImageUrl != null && sp.ImageUrl.Length > 0)
+                {
+                    var uploadResult = await _imageService.SaveImageAsync(sp.ImageUrl);
+                    if (uploadResult.Success && uploadResult.Data != null)
+                    {
+                        imageUrl = uploadResult.Data.Url;
+                    }
+                }
+
+                string bc = generateAutoBarcode();
+                while(await checkExistBarcode(bc) == true)
+                {
+                    bc = generateAutoBarcode();
+                }
+
                 // Tạo entity sản phẩm mới
                 SanPham sanpham = new SanPham
                 {
                     ProductName = sp.ProductName,
-                    Barcode = sp.Barcode,
+                    Barcode = bc,
                     Price = sp.Price,
                     Unit = sp.Unit,
                     CreatedAt = DateTime.Now,
                     Status = sp.Status,
-
-                    CategoryID = sp.Category?.CategoryId,
-                    SupplierID = sp.Supplier?.SupplierId,
+                    ImageUrl = imageUrl,
+                    CategoryID = sp.CategoryID,
+                    SupplierID = sp.SupplierID,
                 };
 
 
@@ -123,13 +176,13 @@ namespace StoreManagementBE.BackendServer.Services
                 throw new Exception("Lỗi khi xóa sản phẩm: " + e.Message);
             }
         }
-        public async Task<SanPhamDTO> Update(SanPhamDTO sp)
+        public async Task<SanPhamDTO> Update(int id, SanPhamRequestDTO sp)
         {
             try
             {
                 // SỬA: Thêm await
                 var existingProduct = await _context.SanPhams
-                    .FirstOrDefaultAsync(x => x.ProductID == sp.ProductID);
+                    .FirstOrDefaultAsync(x => x.ProductID == id);
 
                 if (existingProduct == null)
                     return null;
@@ -144,8 +197,30 @@ namespace StoreManagementBE.BackendServer.Services
                 existingProduct.Status = sp.Status;
 
                 // CHỈ update ID, không update navigation objects
-                existingProduct.CategoryID = sp.Category?.CategoryId;
-                existingProduct.SupplierID = sp.Supplier?.SupplierId;
+                existingProduct.CategoryID = sp.CategoryID;
+                existingProduct.SupplierID = sp.SupplierID;
+                if (sp.ImageUrl != null && sp.ImageUrl.Length > 0)
+                {
+                    // 1. Xóa ảnh cũ nếu có
+                    if (!string.IsNullOrEmpty(existingProduct.ImageUrl))
+                    {
+                        var oldFileName = Path.GetFileName(existingProduct.ImageUrl);
+                        await _imageService.DeleteImageAsync(oldFileName);
+                    }
+
+                    // 2. Upload ảnh mới và lấy URL
+                    var uploadResult = await _imageService.SaveImageAsync(sp.ImageUrl);
+                    if (uploadResult.Success && uploadResult.Data != null)
+                    {
+                        existingProduct.ImageUrl = uploadResult.Data.Url; // Lưu URL vào database
+                        Console.WriteLine($"✅ Đã upload ảnh mới: {uploadResult.Data.Url}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"❌ Lỗi upload ảnh: {uploadResult.Message}");
+                        // Có thể giữ nguyên ảnh cũ hoặc xử lý lỗi
+                    }
+                }
 
                 // KHÔNG cần gọi Update() vì Entity Framework đang track entity
                 await _context.SaveChangesAsync();
@@ -154,7 +229,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var updatedProduct = await _context.SanPhams
                     .Include(x => x.Category)
                     .Include(x => x.Supplier)
-                    .FirstOrDefaultAsync(x => x.ProductID == sp.ProductID);
+                    .FirstOrDefaultAsync(x => x.ProductID == id);
 
                 var resultDTO = _mapper.Map<SanPhamDTO>(updatedProduct);
 
@@ -201,7 +276,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var list = await _context.SanPhams
                             .Include(sp => sp.Category)
                             .Include(sp => sp.Supplier)
-                            .Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()))
+                            .Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()) && x.Barcode.ToLower().Contains(keyword.ToLower()))
                             .ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(list);
             }
@@ -315,29 +390,49 @@ namespace StoreManagementBE.BackendServer.Services
                 throw new Exception("Lỗi khi lấy danh sách sản phẩm theo yêu cầu và loại: " + e.Message);
             }
         }
-        public async Task<List<SanPhamDTO>> getProductsBysupplierIDAndCategoryIDAndPrice(int? supplier_id, int? category_id, string? order)
+
+        
+        public async Task<List<SanPhamDTO>> getProductsBysupplierIDAndCategoryIDAndPriceAndKeyword(int? supplier_id, int? category_id, string? order, string? keyword)
         {
             try
             {
-                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id && x.SupplierID == supplier_id);
-                if (order != "")
+                
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).AsQueryable();
+
+                // Filter by supplier
+                if (supplier_id.HasValue)
                 {
-                    var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
-                    return _mapper.Map<List<SanPhamDTO>>(ls);
+                    query = query.Where(p => p.SupplierID == supplier_id.Value);
                 }
-                else
+
+                // Filter by category
+                if (category_id.HasValue)
                 {
-                    if (order.ToLower() == "desc")
-                    {
-                        var ls = await query.OrderByDescending(sp => sp.Price).ToListAsync();
-                        return _mapper.Map<List<SanPhamDTO>>(ls);
-                    }
+                    query = query.Where(p => p.CategoryID == category_id.Value);
                 }
-                var list = await query.OrderBy(sp => sp.Price).ToListAsync();
+
+                // Search by keyword
+                if (!string.IsNullOrEmpty(keyword))
+                {
+                    query = query.Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()) && x.Barcode.ToLower().Contains(keyword.ToLower()));
+                }
+
+                // Sort by price
+                if (!string.IsNullOrEmpty(order))
+                {
+                    query = order.ToLower() == "desc"
+                        ? query.OrderByDescending(p => p.Price)
+                        : query.OrderBy(p => p.Price);
+                }
+
+                //return await query.Select(p => new SanPhamDTO
+                //{
+                //}).ToListAsync();
+                var list = await query.ToListAsync();
                 return _mapper.Map<List<SanPhamDTO>>(list);
             } catch (Exception e)
             {
-                throw new Exception("Lỗi khi lấy danh sách sản phẩm theo yêu cầu, nhà cung cấp, loại: " + e.Message);
+                throw new Exception("Lỗi khi lấy danh sách sản phẩm theo yêu cầu, nhà cung cấp, loại, keyword: " + e.Message);
             }
         }
     }

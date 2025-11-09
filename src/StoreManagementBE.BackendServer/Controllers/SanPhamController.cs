@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services;
 using StoreManagementBE.BackendServer.Services.Interfaces;
@@ -15,6 +15,7 @@ namespace StoreManagementBE.BackendServer.Controllers
     public class SanPhamController : ControllerBase
     {
         public readonly ISanPhamService _sanPhamService;
+        //private readonly IImageSer
         public SanPhamController(ISanPhamService sanPhamService)
         {
             _sanPhamService = sanPhamService;
@@ -87,7 +88,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] SanPhamDTO sp)
+        public async Task<IActionResult> Create([FromForm] SanPhamRequestDTO sp)
         {
             
             try
@@ -96,17 +97,18 @@ namespace StoreManagementBE.BackendServer.Controllers
                 {
                     return BadRequest(ModelState);
                 }
-                if (await _sanPhamService.checkExistBarcode(sp.Barcode) || await _sanPhamService.checkExistID(sp.ProductID))
+                if (await _sanPhamService.checkExistBarcode(sp.Barcode))
                 {
                     return Conflict(new ApiResponse<SanPhamDTO>
                     {
-                        Message = "Sản phẩm đã tồn tại hoặc trùng mã vạch!",
+                        Message = "Sản phẩm trùng mã vạch!",
                         Success = false
                     });
                 }
 
                 var newSP = await _sanPhamService.Create(sp);
-                return CreatedAtAction("Created products success!", new ApiResponse<SanPhamDTO> {
+                return Ok(new ApiResponse<SanPhamDTO>
+                { // Sửa thành Ok
                     Message = "Thêm sản phẩm thành công!",
                     DataDTO = newSP,
                     Success = true
@@ -121,21 +123,28 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] SanPhamDTO sp)
+        public async Task<IActionResult> Update(int id, [FromForm] SanPhamRequestDTO sp)
         {
             
             try
             {
-                if (await _sanPhamService.checkExistBarcode(sp.Barcode) == false || await _sanPhamService.checkExistID(id) == false)
+                if (await _sanPhamService.checkExistID(id) == false)
                 {
                     return NotFound(new ApiResponse<SanPhamDTO>
                     {
                         Message = "Sản phẩm không tồn tại!",
                         Success = false
                     });
+                } else if(await _sanPhamService.checkBarcodeExistForOtherProducts(id, sp.Barcode))
+                {
+                    return Conflict(new ApiResponse<SanPhamDTO>
+                    {
+                        Message = "Trùng mã vạch!",
+                        Success = false
+                    });
                 }
 
-                var updateSP = await _sanPhamService.Update(sp);
+                    var updateSP = await _sanPhamService.Update(id, sp);
                 return Ok(new ApiResponse<SanPhamDTO>
                 {
                     Message = "Cập nhật sản phẩm thành công!",
@@ -183,51 +192,40 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
 
-        //[HttpPut("status/{id}")]
-        //public IActionResult UpdateStatus(int id)
-        //{
-        //    try
-        //    {
-        //        var result = _sanPhamService.UpdateStatus(id);
-        //        if (result)
-        //        {
-        //            return Ok(new
-        //            {
-        //                message = "Cập nhật trạng thái sản phẩm thành công!",
-        //                success = true
-        //            });
-        //        }
-        //        return BadRequest(new { message = "Cập nhật thất bại", success = false });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(new
-        //        {
-        //            message = ex.Message,
-        //            success = false
-        //        });
-        //    }
-        //}
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchByKeyword([FromQuery] string keyword)
+        public async Task<IActionResult> SearchByKeyword([FromQuery] string? keyword)
         {
             try
             {
-                var list = _sanPhamService.searchByKeyword(keyword);
-                List<SanPhamDTO> ls = await list;
-                if(ls.Count > 0)
+                if(String.IsNullOrEmpty(keyword))
                 {
+                    var ls = await _sanPhamService.GetAll();
                     return Ok(new ApiResponse<List<SanPhamDTO>>
                     {
-                        Message = "Lấy danh sách sản phẩm theo keyword thành công!",
-                        Success = true,
-                        DataDTO = ls
+                        Message = "Reset dữ liệu sản phẩm!",
+                        DataDTO = ls,
+                        Success = true
                     });
                 } else
                 {
-                    return NoContent();
+                    var list = _sanPhamService.searchByKeyword(keyword);
+                    List<SanPhamDTO> ls = await list;
+                    if (ls.Count > 0)
+                    {
+                        return Ok(new ApiResponse<List<SanPhamDTO>>
+                        {
+                            Message = "Lấy danh sách sản phẩm theo keyword thành công!",
+                            Success = true,
+                            DataDTO = ls
+                        });
+                    }
+                    else
+                    {
+                        return NoContent();
+                    }
                 }
+                    
             } catch (Exception e)
             {
                 return BadRequest(new ApiResponse<SanPhamDTO>
@@ -321,61 +319,15 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpGet("advanced_search")]
         public async Task<IActionResult> getProudctsBysupplierIDAndCategoryIDAndPrice([FromQuery] int? supplier_id, 
                                                                         [FromQuery] int? category_id, 
-                                                                        [FromQuery] string? order)
+                                                                        [FromQuery] string? order, [FromQuery] string? keyword)
         {
             try
             {
-                var list = new List<SanPhamDTO>(); ;
-                if(supplier_id.HasValue)
-                {
-                    if(category_id.HasValue)
-                    {
-                        if(order != "")
-                        {
-                            list = await _sanPhamService.getProductsBysupplierIDAndCategoryIDAndPrice(supplier_id, category_id, order);
-                        } else
-                        {
-                            list = await _sanPhamService.getProductsBySupplierIDAndCategoryID(supplier_id, category_id);
-                        }
-                    } else
-                    {
-                        if (order != "")
-                        {
-                            list = await _sanPhamService.getProductsBySupplierIDAndPrice(supplier_id, order);
-                        }
-                        else
-                        {
-                            list = await _sanPhamService.getBySupplierID(supplier_id);
-                        }
-                    }
-                } else
-                {
-                    if (category_id.HasValue)
-                    {
-                        if (order != "")
-                        {
-                            list = await _sanPhamService.getProductsByCategoryIDAndPrice(category_id, order);
-                        }
-                        else
-                        {
-                            list = await _sanPhamService.getByCategoryID(category_id);
-                        }
-                    }
-                    else
-                    {
-                        if (order != "")
-                        {
-                            list = await _sanPhamService.getProductsSortByPrice(order);
-                        }
-                        else
-                        {
-                            list = await _sanPhamService.GetAll();
-                        }
-                    }
-                }
+                var list = await _sanPhamService.getProductsBysupplierIDAndCategoryIDAndPriceAndKeyword(supplier_id, category_id, order, keyword);
+                
                 return Ok(new ApiResponse<List<SanPhamDTO>>
                 {
-                    Message = "Lấy danh sách sản phẩm theo ncc = " + supplier_id + ", lsp = " + category_id + ", giá = " + order + "!",
+                    Message = "Lấy danh sách sản phẩm theo ncc = " + supplier_id + ", lsp = " + category_id + ", giá = " + order + ", keyword = " + keyword + "!",
                     DataDTO = list,
                     Success = true
                 });

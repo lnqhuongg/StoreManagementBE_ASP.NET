@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Models;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace StoreManagementBE.BackendServer.Services
 {
@@ -19,11 +21,40 @@ namespace StoreManagementBE.BackendServer.Services
         }
 
         // lay tat ca loai san pham
-        public async Task<List<LoaiSanPhamDTO>> GetAll()
+        public async Task<PagedResult<LoaiSanPhamDTO>> GetAll(int page, int pageSize, string keyword)
         {
-            var list = await _context.LoaiSanPhams.ToListAsync();
-            // tra ve danh sach DTO
-            return _mapper.Map<List<LoaiSanPhamDTO>>(list);
+            // 1. tìm kiếm trước (nếu mà keyword rỗng thì nó lấy tất cả)
+            var query = SearchByKeyword(keyword);
+
+            // 2. đếm tổng số bản ghi sau khi tìm kiếm
+            var total = await query.CountAsync();
+
+            // 3 phân trang
+            // LẤY THEO TRANG, mỗi trang nó lấy theo cái pagesize mình khai báo bên trên, pagesize = 5
+            // là lấy 5 bản ghi mỗi trang
+            var list = await query
+                .Skip((page - 1) * pageSize)  // Bỏ qua bao nhiêu? -- ví dụ trang đầu 1 - 1 * 5 = 0 -> lấy từ 1 đến pagesize = 5 
+                .Take(pageSize)               // Lấy bao nhiêu?
+                .ToListAsync();
+
+
+            return new PagedResult<LoaiSanPhamDTO>
+            {
+                Data = _mapper.Map<List<LoaiSanPhamDTO>>(list),
+                Total = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
+        public IQueryable<LoaiSanPham> SearchByKeyword(string keyword)
+        {
+            IQueryable<LoaiSanPham> query = _context.LoaiSanPhams;
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(x => x.CategoryName.Contains(keyword));
+            }
+            return query;
         }
 
         // lay ra 1 san pham theo id 
@@ -32,14 +63,6 @@ namespace StoreManagementBE.BackendServer.Services
             var category = await _context.LoaiSanPhams.FindAsync(category_id);
             if (category == null) return null;
             else return _mapper.Map<LoaiSanPhamDTO>(category);
-        }
-
-        // tim kiem loai san pham
-        public List<LoaiSanPham> SearchByKeyword(string keyword)
-        {
-            if (string.IsNullOrEmpty(keyword))
-                return _context.LoaiSanPhams.ToList();
-            return _context.LoaiSanPhams.Where(x => x.CategoryName.Contains(keyword)).ToList();
         }
 
         // tao moi 
@@ -83,33 +106,41 @@ namespace StoreManagementBE.BackendServer.Services
             }
         }
 
-        public bool Delete(int id)
+        public async Task<bool> Delete(int id)
         {
             try
             {
-                var existing = _context.LoaiSanPhams.Find(id);
-                if (existing == null)
-                {
-                    return false;
+                var existing = await _context.LoaiSanPhams
+                    .Include(l => l.SanPhams)
+                    .FirstOrDefaultAsync(l => l.CategoryId == id);
+
+                    if (existing == null)
+                        return false;
+
+                    if (existing.SanPhams.Any())
+                    {
+                        throw new InvalidOperationException("Không thể xóa vì có sản phẩm đang sử dụng loại này!");
+                    }
+
+                    _context.LoaiSanPhams.Remove(existing);
+                    await _context.SaveChangesAsync();
+                    return true;
                 }
-
-                _context.LoaiSanPhams.Remove(existing);
-                _context.SaveChanges();
-
-                return true;
-            }
             catch (Exception ex)
             {
                 throw new Exception("Lỗi khi xóa loại sản phẩm: " + ex.Message);
             }
         }
 
-        public async Task<bool> isCategoryNameExist(string category_name)
+        public async Task<bool> isCategoryNameExist(string categoryName, int id = 0)
         {
-            bool CategoryNameExist = await _context.LoaiSanPhams
-                .AnyAsync(x => x.CategoryName == category_name);
-
-            return CategoryNameExist;
+            // id = 0 -> thêm 
+            // truyền id vô để kiểm tra trùng lúc sửa ko bị trùng với chính nó
+            return await _context.LoaiSanPhams
+                .AnyAsync(x =>
+                    x.CategoryName == categoryName &&
+                    (id == 0 || x.CategoryId != id)
+                );
         }
 
         public async Task<bool> isCategoryExist (int category_id)

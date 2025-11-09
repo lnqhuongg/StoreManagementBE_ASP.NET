@@ -5,13 +5,13 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
 {
     public interface ILoaiSanPhamService
     {
-        Task<List<LoaiSanPhamDTO>> GetAll();
+        Task<PagedResult<LoaiSanPhamDTO>> GetAll(int page, int pageSize, string keyword);
+        IQueryable<LoaiSanPham> SearchByKeyword(string keyword);
         Task<LoaiSanPhamDTO> GetById(int category_id);
-        List<LoaiSanPham> SearchByKeyword(string keyword);
         Task<LoaiSanPhamDTO> Create(LoaiSanPhamDTO loaiSanPhamDTO);
         Task<LoaiSanPhamDTO> Update(int id, LoaiSanPhamDTO loaiSanPhamDTO);
-        Task<bool> isCategoryNameExist(string category_name);
+        Task<bool> isCategoryNameExist(string categoryName, int id = 0);
         Task<bool> isCategoryExist(int category_id);
-        bool Delete(int category_id);
+        Task<bool> Delete(int category_id);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Enum;
 using StoreManagementBE.BackendServer.Models;
@@ -24,12 +25,43 @@ namespace StoreManagementBE.BackendServer.Services
             _imageService = imageService;
         }
 
-        public async Task<List<SanPhamDTO>> GetAll()
+        public async Task<PagedResult<SanPhamDTO>> GetAll(int page, int pageSize, string? keyword, string? order, int? categoryID, int? supplierID)
         {
             try
             {
-                var list = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(list);
+                //var list = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).ToListAsync();
+                //return _mapper.Map<List<SanPhamDTO>>(list);
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).AsQueryable();
+                if(!string.IsNullOrEmpty(keyword))
+                {
+                    query = query.Where(x => x.ProductName == keyword || x.Barcode == keyword);
+                }
+                if (!string.IsNullOrEmpty(order))
+                {
+                    query = order.ToLower() == "desc"
+                        ? query.OrderByDescending(p => p.Price)
+                        : query.OrderBy(p => p.Price);
+                }
+                if(categoryID.HasValue)
+                {
+                    query = query.Where(x => x.CategoryID == categoryID);
+                }
+                if(supplierID.HasValue)
+                {
+                    query = query.Where(x => x.SupplierID == supplierID);
+                }
+                int totalPage = await query.CountAsync();
+                var list = await query
+                .Skip((page - 1) * pageSize)  
+                .Take(pageSize)               
+                .ToListAsync();
+                return new PagedResult<SanPhamDTO>
+                {
+                    Data = _mapper.Map<List<SanPhamDTO>>(list),
+                    Total = totalPage,
+                    Page = page,
+                    PageSize = pageSize
+                };
             } catch(Exception e)
             {
                 throw new Exception("Lỗi khi lấy danh sách sản phẩm: " + e.Message);
@@ -241,199 +273,6 @@ namespace StoreManagementBE.BackendServer.Services
             }
         }
 
-        //public bool UpdateStatus(int id)
-        //{
-        //    try
-        //    {
-        //        SanPham sanpham = _context.SanPhams.Find(id);
-        //        if (sanpham != null)
-        //        {
-        //            Console.WriteLine("id sp update status: ", sanpham.product_id);
-        //            sanpham.status = (sanpham.status == 1) ? 0 : 1;
-
-        //            _context.SaveChanges();
-        //            return true;
-        //        }
-        //        else
-        //        {
-        //            throw new Exception("Không tìm thấy sản phẩm cần cập nhật!");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception($"Lỗi khi cập nhật: {ex.Message}");
-        //    }
-        //}
-        public async Task<List<SanPhamDTO>> searchByKeyword(string keyword)
-        {
-            //return _context.SanPhams
-            //    .Include(sp => sp.Category)
-            //    .Include(sp => sp.Supplier)
-            //    .Where(x => x.product_name.ToLower().Contains(keyword.ToLower()))
-            //    .ToList();
-            try
-            {
-                var list = await _context.SanPhams
-                            .Include(sp => sp.Category)
-                            .Include(sp => sp.Supplier)
-                            .Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()) && x.Barcode.ToLower().Contains(keyword.ToLower()))
-                            .ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(list);
-            }
-            catch (Exception e)
-            {
-                throw new Exception("Lỗi khi tìm sản phẩm theo keyword: " + e.Message);
-            }
-        }
-        public async Task<List<SanPhamDTO>> getBySupplierID(int? supplier_id)
-        {
-            try
-            {
-                var list = await _context.SanPhams.Include(sp => sp.Category)
-                .Include(sp => sp.Supplier).Where(x => x.SupplierID == supplier_id).ToListAsync();
-                    return _mapper.Map<List<SanPhamDTO>>(list);
-            } catch (Exception e)
-            {
-                throw new Exception("Lỗi khi tìm sản phẩm theo nhà cung cấp: " + e.Message);
-            }
-        }
-        public async Task<List<SanPhamDTO>> getByCategoryID(int? category_id)
-        {
-            try
-            {
-                var list = await _context.SanPhams.Include(sp => sp.Category)
-                .Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(list);
-            } catch(Exception e)
-            {
-                throw new Exception("Lỗi khi tìm sản phẩm theo loại: " + e.Message);
-            }
-        }
-        public async Task<List<SanPhamDTO>> getProductsSortByPrice(string? order)
-        {
-            try
-            {
-                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier);
-                if (order.ToLower() == "desc")
-                {
-                    var list = await query.OrderByDescending(sp => sp.Price).ToListAsync();
-                    return _mapper.Map<List<SanPhamDTO>>(list);
-                }
-                var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(ls);
-            } catch (Exception e)
-            {
-                throw new Exception("Lỗi khi lấy danh sách sắp xếp theo yêu cầu: " + e.Message);
-            }
-        }
-        public async Task<List<SanPhamDTO>> getProductsBySupplierIDAndCategoryID(int? supplier_id, int? category_id)
-        {
-            try
-            {
-                var ls = await _context.SanPhams.Include(sp => sp.Category)
-            .Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id && x.SupplierID == supplier_id).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(ls);
-            } catch (Exception e)
-            {
-                throw new Exception("Lỗi khi tìm sản phẩm theo nhà cung cấp và loại: " + e.Message);
-            }
-        }
-        public async Task<List<SanPhamDTO>> getProductsBySupplierIDAndPrice(int? supplier_id, string? order)
-        {
-            try
-            {
-                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.SupplierID == supplier_id);
-                if (order != "")
-                {
-                    if (order.ToLower() == "desc")
-                    {
-                        var ls = await query.OrderByDescending(sp => sp.Price).ToListAsync();
-                        return _mapper.Map<List<SanPhamDTO>>(ls);
-                    }
-                }
-                else
-                {
-                    var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
-                    return _mapper.Map<List<SanPhamDTO>>(ls);
-                }
-
-                var list = await query.OrderBy(sp => sp.Price).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(list);
-            } catch (Exception e)
-            {
-                throw new Exception("Lỗi khi lấy danh sách sản phẩm sắp xếp theo nhà cung cấp: " + e.Message);
-            }
-        }
-        public async Task<List<SanPhamDTO>> getProductsByCategoryIDAndPrice(int? category_id, string? order)
-        {
-            try
-            {
-                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).Where(x => x.CategoryID == category_id);
-                if (order != "")
-                {
-                    if (order.ToLower() == "desc")
-                    {
-                        var ls = await query.OrderByDescending(sp => sp.Price).ToListAsync();
-                        return _mapper.Map<List<SanPhamDTO>>(ls);
-                    }
-                }
-                else
-                {
-                    var ls = await query.OrderBy(sp => sp.Price).ToListAsync();
-                    return _mapper.Map<List<SanPhamDTO>>(ls);
-                }
-
-                var list = await query.OrderBy(sp => sp.Price).ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(list);
-            } catch (Exception e)
-            {
-                throw new Exception("Lỗi khi lấy danh sách sản phẩm theo yêu cầu và loại: " + e.Message);
-            }
-        }
-
         
-        public async Task<List<SanPhamDTO>> getProductsBysupplierIDAndCategoryIDAndPriceAndKeyword(int? supplier_id, int? category_id, string? order, string? keyword)
-        {
-            try
-            {
-                
-                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).AsQueryable();
-
-                // Filter by supplier
-                if (supplier_id.HasValue)
-                {
-                    query = query.Where(p => p.SupplierID == supplier_id.Value);
-                }
-
-                // Filter by category
-                if (category_id.HasValue)
-                {
-                    query = query.Where(p => p.CategoryID == category_id.Value);
-                }
-
-                // Search by keyword
-                if (!string.IsNullOrEmpty(keyword))
-                {
-                    query = query.Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()) && x.Barcode.ToLower().Contains(keyword.ToLower()));
-                }
-
-                // Sort by price
-                if (!string.IsNullOrEmpty(order))
-                {
-                    query = order.ToLower() == "desc"
-                        ? query.OrderByDescending(p => p.Price)
-                        : query.OrderBy(p => p.Price);
-                }
-
-                //return await query.Select(p => new SanPhamDTO
-                //{
-                //}).ToListAsync();
-                var list = await query.ToListAsync();
-                return _mapper.Map<List<SanPhamDTO>>(list);
-            } catch (Exception e)
-            {
-                throw new Exception("Lỗi khi lấy danh sách sản phẩm theo yêu cầu, nhà cung cấp, loại, keyword: " + e.Message);
-            }
-        }
     }
 }

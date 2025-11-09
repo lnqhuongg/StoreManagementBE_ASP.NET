@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Services.Interfaces;
 
@@ -10,90 +9,52 @@ namespace StoreManagementBE.BackendServer.Controllers
     public class DonHangController : ControllerBase
     {
         private readonly IDonHangService _service;
-        private readonly ILogger<DonHangController> _logger;
 
-        public DonHangController(IDonHangService service, ILogger<DonHangController> logger)
+        public DonHangController(IDonHangService service)
         {
             _service = service;
-            _logger = logger;
         }
 
-        // GET /api/orders
+        // GET /api/orders?page=1&pageSize=5&keyword=...&dateFrom=...&dateTo=...&minTotal=...&maxTotal=...
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 5,
+            [FromQuery] OrderFilterDTO? filter = null
+        )
         {
-            try
+            filter ??= new OrderFilterDTO();
+            var pr = await _service.GetAll(page, pageSize, filter);
+
+            return Ok(new ApiResponse<PagedResult<DonHangDTO>>
             {
-                var data = await _service.GetAll();
-                var resp = new ApiResponse<List<DonHangDTO>>
-                {
-                    Success = true,
-                    Message = "Lấy danh sách đơn hàng thành công",
-                    DataDTO = data
-                };
-                return Ok(resp); // 200
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GET /api/orders failed");
-                var resp = new ApiResponse<List<DonHangDTO>>
-                {
-                    Success = false,
-                    Message = "Đã xảy ra lỗi hệ thống khi lấy danh sách đơn hàng.",
-                    DataDTO = null
-                };
-                return StatusCode(500, resp); // 500
-            }
+                Success = true,
+                Message = "OK",
+                DataDTO = pr
+            });
         }
 
         // GET /api/orders/{id}
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById([FromRoute] int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            try
+            var dto = await _service.GetById(id);
+            if (dto == null)
             {
-                if (id <= 0)
-                {
-                    var bad = new ApiResponse<DonHangDTO>
-                    {
-                        Success = false,
-                        Message = "Id không hợp lệ.",
-                        DataDTO = null
-                    };
-                    return BadRequest(bad); // 400
-                }
-
-                var data = await _service.GetById(id);
-                if (data == null)
-                {
-                    var notFound = new ApiResponse<DonHangDTO>
-                    {
-                        Success = false,
-                        Message = $"Không tìm thấy đơn hàng với id = {id}",
-                        DataDTO = null
-                    };
-                    return NotFound(notFound); // 404
-                }
-
-                var resp = new ApiResponse<DonHangDTO>
-                {
-                    Success = true,
-                    Message = "Lấy chi tiết đơn hàng thành công",
-                    DataDTO = data
-                };
-                return Ok(resp); // 200
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GET /api/orders/{id} failed. id={Id}", id);
-                var resp = new ApiResponse<DonHangDTO>
+                return NotFound(new ApiResponse<DonHangDTO>
                 {
                     Success = false,
-                    Message = "Đã xảy ra lỗi hệ thống khi lấy chi tiết đơn hàng.",
+                    Message = $"Không tìm thấy đơn hàng id={id}",
                     DataDTO = null
-                };
-                return StatusCode(500, resp); // 500
+                });
             }
+
+            return Ok(new ApiResponse<DonHangDTO>
+            {
+                Success = true,
+                Message = "OK",
+                DataDTO = dto
+            });
         }
     }
 }

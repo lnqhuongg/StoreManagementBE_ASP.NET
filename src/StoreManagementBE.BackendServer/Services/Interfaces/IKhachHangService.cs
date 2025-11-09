@@ -1,18 +1,32 @@
 using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.Models.Entities;
 
 namespace StoreManagementBE.BackendServer.Services.Interfaces
 {
     public interface IKhachHangService
     {
-        Task<List<KhachHangDTO>> GetAll();
-        Task<KhachHangDTO> GetById(int id);
-        Task<KhachHangDTO> Create(KhachHangDTO kh);
-        Task<KhachHangDTO?> Update(KhachHangDTO kh);
-        Task<List<KhachHangDTO>> SearchByKeyword(string keyword);
+        // lấy tất cả khách hàng + phân trang 
+        Task<PagedResult<KhachHangDTO>> GetAll(int page, int pageSize, string keyword);
 
-        // Optional check exist
-        Task<bool> CheckExistID(int id);
-        Task<bool> CheckExistPhone(string phone);
-        Task<bool> CheckExistEmail(string email);
+        // tìm kiếm theo từ khóa (tên, sđt, email)
+        IQueryable<KhachHang> SearchByKeyword(string keyword);
+
+        // lấy ra 1 khách hàng theo id 
+        Task<KhachHangDTO> GetById(int id);
+
+        // tạo mới khách hàng(đã tự kiểm tra trùng email + sđt)
+        Task<KhachHangDTO> Create(KhachHangDTO dto);
+
+        // cập nhật khách hàng (chỉ cho sửa Tên và Địa chỉ, KHÔNG cho sửa SĐT, Email, Điểm)
+        Task<KhachHangDTO?> Update(int id, KhachHangDTO dto);
+
+        // kiểm tra phone đã tồn tại chưa (chỉ dùng khi tạo mới)
+        Task<bool> IsPhoneExist(string phone);
+
+        // kiểm tra email đã tồn tại chưa (chỉ dùng khi tạo mới)
+        Task<bool> IsEmailExist(string email);
+
+        // kiểm tra khách hàng có tồn tại không
+        Task<bool> IsCustomerExist(int customerId);
     }
 }

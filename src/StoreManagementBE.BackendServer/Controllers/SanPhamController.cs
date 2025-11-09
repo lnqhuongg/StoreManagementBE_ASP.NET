@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services;
@@ -16,10 +17,12 @@ namespace StoreManagementBE.BackendServer.Controllers
     public class SanPhamController : ControllerBase
     {
         public readonly ISanPhamService _sanPhamService;
+        public readonly ITonKhoService _tonKhoService;
         //private readonly IImageSer
-        public SanPhamController(ISanPhamService sanPhamService)
+        public SanPhamController(ISanPhamService sanPhamService, ITonKhoService tonKhoService)
         {
             _sanPhamService = sanPhamService;
+            _tonKhoService = tonKhoService;
         }
 
         [HttpGet]
@@ -193,7 +196,57 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
 
+        [HttpGet("getStock/{productID}")]
+        public async Task<IActionResult> getStock([FromRoute] int productID)
+        {
+            try
+            {
+                Console.WriteLine("get stock in controller");
+                var tonkho = await _tonKhoService.GetByProductID(productID);
+                if (tonkho == null)
+                {
+                    return NotFound(new ApiResponse<TonKhoDTO>
+                    {
+                        Message = "Không tìm thấy tồn kho!",
+                        Success = false
+                    });
+                }
+                return Ok(new ApiResponse<TonKhoDTO>
+                {
+                    Message = "Lấy tồn kho của sản phẩm thành công!",
+                    DataDTO = tonkho,
+                    Success = true
+                });
+            } catch (Exception e)
+            {
+                return BadRequest(new ApiResponse<TonKhoDTO>
+                {
+                    Message = "Lỗi khi lấy tồn kho: " + e.Message,
+                    Success = false
+                } );
+            }
+        }
 
-        
+        [HttpGet("getAllStock")]
+        public async Task<IActionResult> getAllStock()
+        {
+            try
+            {
+                var list = await _tonKhoService.GetAll();
+                return Ok(new ApiResponse<List<TonKhoDTO>>
+                {
+                    DataDTO = list,
+                    Message = "success",
+                    Success = true
+                });
+            } catch(Exception e)
+            {
+                return BadRequest(new ApiResponse<List<TonKhoDTO>>
+                {
+                    Message = "Lỗi khi lấy danh sách tồn kho: " + e.Message,
+                    Success = false
+                });
+            }
+        }
     }
 }

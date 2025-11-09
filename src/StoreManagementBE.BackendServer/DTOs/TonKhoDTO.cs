@@ -1,4 +1,6 @@
-﻿namespace StoreManagementBE.BackendServer.DTOs
+﻿using StoreManagementBE.BackendServer.Models.Entities;
+
+namespace StoreManagementBE.BackendServer.DTOs
 {
     public class TonKhoDTO
     {

@@ -18,12 +18,27 @@ namespace StoreManagementBE.BackendServer.Services
             _mapper = mapper;
         }
 
-        public async Task<List<NhanVienDTO>> GetAll()
+        public async Task<PagedResult<NhanVienDTO>> GetAll(int page, int pageSize, NhanVienFilterDTO filter)
         {
-            var list = await _context.NhanViens.ToListAsync();
+            var query = Search(filter);
+
+            var total = await query.CountAsync();
+
+            var list = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
             var dtos = _mapper.Map<List<NhanVienDTO>>(list);
             dtos.ForEach(dto => dto.Password = "");
-            return dtos;
+
+            return new PagedResult<NhanVienDTO>
+            {
+                Data = dtos,
+                Total = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<NhanVienDTO?> GetById(int userId)
@@ -36,20 +51,38 @@ namespace StoreManagementBE.BackendServer.Services
             return dto;
         }
 
-        public List<NhanVien> SearchByKeyword(string keyword)
+        public IQueryable<NhanVien> Search(NhanVienFilterDTO filter)
         {
-            if (string.IsNullOrEmpty(keyword))
-                return _context.NhanViens.ToList();
+            IQueryable<NhanVien> query = _context.NhanViens;
 
-            return _context.NhanViens.Where(x =>
-                x.Username.Contains(keyword) ||
-                x.FullName.Contains(keyword) ||
-                x.Role.Contains(keyword)).ToList();
+            if (!string.IsNullOrEmpty(filter.Keyword))
+            {
+                query = query.Where(x =>
+                    x.Username.Contains(filter.Keyword) ||
+                    x.FullName.Contains(filter.Keyword) ||
+                    x.Role.Contains(filter.Keyword));
+            }
+
+            if (!string.IsNullOrEmpty(filter.Role))
+            {
+                if (filter.Role != "admin" && filter.Role != "staff")
+                {
+                    throw new Exception("Role phải là 'admin' hoặc 'staff'!");
+                }
+                query = query.Where(x => x.Role == filter.Role);
+            }
+
+            return query;
         }
 
-        // CREATE: Không cho phép trùng Username
+        // CREATE: Không cho phép trùng Username, và role set cứng admin/staff
         public async Task<NhanVienDTO> Create(NhanVienDTO dto)
         {
+            if (dto.Role != "admin" && dto.Role != "staff")
+            {
+                throw new Exception("Role phải là 'admin' hoặc 'staff'!");
+            }
+
             // Kiểm tra trùng username
             if (await isUsernameExist(dto.Username))
             {
@@ -71,9 +104,14 @@ namespace StoreManagementBE.BackendServer.Services
             return resultDto;
         }
 
-        // UPDATE: Không cho phép trùng Username (ngoại trừ chính nó)
+        // UPDATE: Không cho phép trùng Username (ngoại trừ chính nó), và role set cứng admin/staff
         public async Task<NhanVienDTO?> Update(int id, NhanVienDTO dto)
         {
+            if (dto.Role != "admin" && dto.Role != "staff")
+            {
+                throw new Exception("Role phải là 'admin' hoặc 'staff'!");
+            }
+
             var existing = await _context.NhanViens.FindAsync(id);
             if (existing == null)
             {

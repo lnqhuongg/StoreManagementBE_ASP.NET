@@ -16,11 +16,14 @@ namespace StoreManagementBE.BackendServer.Controllers
 
         //get all
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] PhieuNhapFilter? input = null)
         {
-            var list = await _phieuNhapService.GetAll();
-            var response = new ApiResponse<List<PhieuNhapDTO>>();
-            if (list == null || list.Count == 0)
+            var list = await _phieuNhapService.GetAll(input, pageNumber, pageSize);
+            var response = new ApiResponse<PagedResult<PhieuNhapDTO>>();
+            if (list == null || list.Data.Count == 0)
             {
                 response.Success = false;
                 response.Message = "Không có phiếu nhập nào!";
@@ -117,15 +120,6 @@ namespace StoreManagementBE.BackendServer.Controllers
             });
         }
 
-
-
-        //search by keyword
-        [HttpGet("search")]
-        public IActionResult Search([FromQuery] string keyword)
-        {
-            var result = _phieuNhapService.SearchByKeyword(keyword);
-            return Ok(result);
-        }
 
         // create phieu nhap voi chi tiet
         [HttpPost("with-details")]

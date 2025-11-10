@@ -5,14 +5,17 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
 {
     public interface IPhieuNhapService
     {
-        Task<List<PhieuNhapDTO>> GetAll();
+        Task<PagedResult<PhieuNhapDTO>> GetAll(PhieuNhapFilter input, int pageNumber, int pageSize);
         Task<PhieuNhapDTO> GetById(int id);
-        List<PhieuNhapDTO> SearchByKeyword(string keyword);
         Task<PhieuNhapDTO> Create(PhieuNhapDTO phieuNhap);
 
         Task<PhieuNhapDTO> CreateWithDetails(CreatePhieuNhapDTO phieuNhapDto);
         Task<PhieuNhapDTO> Update(PhieuNhapDTO phieuNhap);
         bool Delete(int id);
         bool isExist(int id);
+
+        IQueryable<PhieuNhap> FilterAndSearch(IQueryable<PhieuNhap> query, PhieuNhapFilter input);
+
+        
     }
 }

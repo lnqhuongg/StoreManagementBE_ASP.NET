@@ -18,18 +18,6 @@ namespace StoreManagementBE.BackendServer.Services
             _mapper = mapper;
         }
 
-        //get all
-        public async Task<List<PhieuNhapDTO>> GetAll()
-        {
-            var list = await _context.PhieuNhaps
-                .Include(p => p.Staff)
-                .Include(p => p.Supplier)
-                .Include(p => p.ImportDetails)
-                    .ThenInclude(d => d.Product)
-                .ToListAsync();
-            return _mapper.Map<List<PhieuNhapDTO>>(list);
-        }
-
         //get by id
         public async Task<PhieuNhapDTO> GetById(int id)
         {
@@ -42,7 +30,6 @@ namespace StoreManagementBE.BackendServer.Services
                 .FirstOrDefaultAsync(p => p.ImportId == id);
             return _mapper.Map<PhieuNhapDTO>(phieuNhap);
         }
-
 
         //create
         public async Task<PhieuNhapDTO> Create(PhieuNhapDTO phieuNhapDto)
@@ -101,6 +88,8 @@ namespace StoreManagementBE.BackendServer.Services
             }
         }
 
+
+        //update
         public async Task<PhieuNhapDTO> Update(PhieuNhapDTO phieuNhapDto)
         {
             try
@@ -187,13 +176,6 @@ namespace StoreManagementBE.BackendServer.Services
             return _context.PhieuNhaps.Any(e => e.ImportId == id);
         }
 
-        //search by keyword
-        public List<PhieuNhapDTO> SearchByKeyword(string keyword)
-        {
-            throw new NotImplementedException();
-        }
-
-
         // add phieu nhap bao gom chi tiet
         public async Task<PhieuNhapDTO> CreateWithDetails(CreatePhieuNhapDTO phieuNhapDto)
         {
@@ -277,6 +259,70 @@ namespace StoreManagementBE.BackendServer.Services
                 throw;
             }
         }
+
+        public IQueryable<PhieuNhap> FilterAndSearch(IQueryable<PhieuNhap> query, PhieuNhapFilter input)
+        {
+            query = _context.PhieuNhaps.AsQueryable();
+            Console.WriteLine($"StartDate: {input.StartDate}");
+            Console.WriteLine($"EndDate: {input.EndDate}");
+            // 🔹 Tìm kiếm theo từ khóa
+            if (!string.IsNullOrEmpty(input.Keyword))
+            {
+                query = query.Where(p =>
+                    (p.Supplier != null && p.Supplier.Name.Contains(input.Keyword)) ||
+                    (p.Staff != null && p.Staff.FullName.Contains(input.Keyword)));
+            }
+
+            // 🔹 Lọc theo giá tiền
+            if (input.MinPrice.HasValue)
+                query = query.Where(p => p.TotalAmount >= input.MinPrice.Value);
+
+            if (input.MaxPrice.HasValue)
+                query = query.Where(p => p.TotalAmount <= input.MaxPrice.Value);
+
+            // 🔹 Lọc theo ngày (chỉ ngày, bỏ giờ)
+            if (input.StartDate.HasValue)
+            {
+                var startDate = input.StartDate.Value.Date; // 2025-11-05 00:00:00
+                query = query.Where(p => p.ImportDate >= startDate);
+            }
+
+            if (input.EndDate.HasValue)
+            {
+                // Lấy đến cuối ngày 2025-11-06
+                var endDate = input.EndDate.Value.Date.AddDays(1).AddTicks(-1);
+                query = query.Where(p => p.ImportDate <= endDate);
+            }
+
+            // 🔹 Include navigation
+            query = query
+                .Include(p => p.Staff)
+                .Include(p => p.Supplier)
+                .Include(p => p.ImportDetails)
+                    .ThenInclude(d => d.Product);
+
+            return query;
+        }
+
+
+
+        public async Task<PagedResult<PhieuNhapDTO>> GetAll(PhieuNhapFilter input, int pageNumber, int pageSize)
+        {
+            var query = FilterAndSearch(_context.PhieuNhaps, input);
+            // ✅ Sắp xếp trước khi Skip/Take
+            query = query.OrderBy(p => p.ImportDate);
+            var total = await query.CountAsync();
+
+            var pagedList = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            return new PagedResult<PhieuNhapDTO>
+            {
+                Total = total,
+                Page = pageNumber,
+                PageSize = pageSize,
+                Data = _mapper.Map<List<PhieuNhapDTO>>(pagedList)
+            };
+        }
+
     }
 }
 

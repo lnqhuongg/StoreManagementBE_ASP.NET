@@ -5,13 +5,13 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
 {
     public interface INhaCungCapService
     {
-        Task<List<NhaCungCapDTO>> GetAll();
+        Task<PagedResult<NhaCungCapDTO>> GetAll(int page, int pageSize, string keyword);
+        IQueryable<NhaCungCap> SearchByKeyword(string keyword);
         Task<NhaCungCapDTO?> GetById(int supplierId);
-        List<NhaCungCap> SearchByKeyword(string keyword);
-        Task<NhaCungCapDTO> Create(NhaCungCapDTO dto);
-        Task<NhaCungCapDTO?> Update(int id, NhaCungCapDTO dto);
-        Task<bool> Delete(int id);
+        Task<NhaCungCapDTO> Create(NhaCungCapDTO nhaCungCapDTO);
+        Task<NhaCungCapDTO?> Update(int id, NhaCungCapDTO dtnhaCungCapDTOo);
         Task<bool> IsSupplierIdExist(int supplierId);
         Task<bool> IsSupplierExist(string name, string email, string phone, int? ignoreId = null);
+        Task<bool> Delete(int supplierId);
     }
 }

@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Mvc;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.Services.Interfaces;
@@ -17,23 +16,28 @@ namespace StoreManagementBE.BackendServer.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 5,
+            [FromQuery] string keyword = "")
         {
             try
             {
-                var list = await _khService.GetAll();
-                if (list.Count == 0) return NoContent();
+                var result = await _khService.GetAll(page, pageSize, keyword);
 
-                return Ok(new ApiResponse<List<KhachHangDTO>>
+                if (result.Data.Count == 0)
+                    return NoContent();
+
+                return Ok(new ApiResponse<PagedResult<KhachHangDTO>>
                 {
                     Message = "Lấy danh sách khách hàng thành công!",
-                    DataDTO = list,
+                    DataDTO = result,
                     Success = true
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<KhachHangDTO>
+                return BadRequest(new ApiResponse<object>
                 {
                     Message = ex.Message,
                     Success = false
@@ -81,7 +85,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 if (!ModelState.IsValid) return BadRequest(ModelState);
 
                 // Kiểm tra trùng Phone
-                if (!string.IsNullOrEmpty(dto.Phone) && await _khService.CheckExistPhone(dto.Phone))
+                if (!string.IsNullOrEmpty(dto.Phone) && await _khService.IsPhoneExist(dto.Phone))
                 {
                     return Conflict(new ApiResponse<KhachHangDTO>
                     {
@@ -91,7 +95,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 }
 
                 // Kiểm tra trùng Email
-                if (!string.IsNullOrEmpty(dto.Email) && await _khService.CheckExistEmail(dto.Email))
+                if (!string.IsNullOrEmpty(dto.Email) && await _khService.IsEmailExist(dto.Email))
                 {
                     return Conflict(new ApiResponse<KhachHangDTO>
                     {
@@ -126,7 +130,7 @@ namespace StoreManagementBE.BackendServer.Controllers
             {
                 if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                if (!await _khService.CheckExistID(id))
+                if (!await _khService.IsCustomerExist(id))
                 {
                     return NotFound(new ApiResponse<KhachHangDTO>
                     {
@@ -135,28 +139,9 @@ namespace StoreManagementBE.BackendServer.Controllers
                     });
                 }
 
-                // Kiểm tra trùng Phone
-                if (!string.IsNullOrEmpty(dto.Phone) && await _khService.CheckExistPhone(dto.Phone))
-                {
-                    return Conflict(new ApiResponse<KhachHangDTO>
-                    {
-                        Message = "Số điện thoại đã tồn tại!",
-                        Success = false
-                    });
-                }
+                // ĐÃ XÓA: kiểm tra trùng Phone/Email vì frontend KHÔNG CHO SỬA
 
-                // Kiểm tra trùng Email
-                if (!string.IsNullOrEmpty(dto.Email) && await _khService.CheckExistEmail(dto.Email))
-                {
-                    return Conflict(new ApiResponse<KhachHangDTO>
-                    {
-                        Message = "Email đã tồn tại!",
-                        Success = false
-                    });
-                }
-
-                dto.CustomerId = id;
-                var updated = await _khService.Update(dto);
+                var updated = await _khService.Update(id, dto); // ĐÃ SỬA: truyền id
 
                 if (updated == null)
                     return NotFound();

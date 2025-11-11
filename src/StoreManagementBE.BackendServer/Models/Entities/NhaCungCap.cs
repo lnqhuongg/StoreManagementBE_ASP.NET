@@ -29,5 +29,6 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         [Required]
         [Column("status", TypeName = "bit(1)")]
         public int Status { get; set; }
+        public ICollection<SanPham> SanPhams { get; set; } = new List<SanPham>();
     }
 }

@@ -1,4 +1,3 @@
-
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.DTOs;
@@ -19,116 +18,141 @@ namespace StoreManagementBE.BackendServer.Services
             _mapper = mapper;
         }
 
-        public async Task<List<KhachHangDTO>> GetAll()
+        // lấy tất cả khách hàng + phân trang + tìm kiếm theo tên, sđt, email
+        public async Task<PagedResult<KhachHangDTO>> GetAll(int page, int pageSize, string keyword)
         {
-            try
+            // 1. tìm kiếm trước (nếu mà keyword rỗng thì nó lấy tất cả)
+            var query = SearchByKeyword(keyword);
+
+            // 2. đếm tổng số bản ghi sau khi tìm kiếm
+            var total = await query.CountAsync();
+
+            // 3 phân trang
+            // LẤY THEO TRANG, mỗi trang nó lấy theo cái pagesize mình khai báo bên trên, pagesize = 5
+            // là lấy 5 bản ghi mỗi trang
+            var list = await query
+                .Skip((page - 1) * pageSize)  // Bỏ qua bao nhiêu? -- ví dụ trang đầu 1 - 1 * 5 = 0 -> lấy từ 1 đến pagesize = 5 
+                .Take(pageSize)               // Lấy bao nhiêu?
+                .ToListAsync();
+
+            return new PagedResult<KhachHangDTO>
             {
-                var list = await _context.KhachHangs.ToListAsync();
-                return _mapper.Map<List<KhachHangDTO>>(list);
-            }
-            catch (Exception e)
-            {
-                throw new Exception("Lỗi khi lấy danh sách khách hàng: " + e.Message);
-            }
+                Data = _mapper.Map<List<KhachHangDTO>>(list),
+                Total = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
+        public IQueryable<KhachHang> SearchByKeyword(string keyword)
+        {
+            IQueryable<KhachHang> query = _context.KhachHangs;
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                keyword = keyword.Trim().ToLower();
+                query = query.Where(x =>
+                    (x.Name != null && x.Name.ToLower().Contains(keyword)) ||
+                    (x.Phone != null && x.Phone.Contains(keyword)) ||
+                    (x.Email != null && x.Email.ToLower().Contains(keyword))
+                );
+            }
+            return query;
+        }
+
+        // lấy ra 1 khách hàng theo id 
         public async Task<KhachHangDTO> GetById(int id)
         {
-            try
-            {
-                var kh = await _context.KhachHangs.FirstOrDefaultAsync(x => x.CustomerId == id);
-                return _mapper.Map<KhachHangDTO>(kh);
-            }
-            catch (Exception e)
-            {
-                throw new Exception("Lỗi khi lấy khách hàng theo ID: " + e.Message);
-            }
+            var kh = await _context.KhachHangs.FindAsync(id);
+            if (kh == null) throw new KeyNotFoundException($"Khách hàng với id {id} không tồn tại.");
+            return _mapper.Map<KhachHangDTO>(kh);
         }
 
-        public async Task<List<KhachHangDTO>> SearchByKeyword(string keyword)
-        {
-            try
-            {
-                var query = _context.KhachHangs.AsQueryable();
-
-                if (!string.IsNullOrEmpty(keyword))
-                {
-                    query = query.Where(x => x.Name.ToLower().Contains(keyword.ToLower()));
-                }
-
-                var list = await query.ToListAsync();
-                return _mapper.Map<List<KhachHangDTO>>(list);
-            }
-            catch (Exception e)
-            {
-                throw new Exception("Lỗi khi tìm kiếm khách hàng: " + e.Message);
-            }
-        }
-
-        public async Task<bool> CheckExistID(int id)
-        {
-            return await _context.KhachHangs.AnyAsync(x => x.CustomerId == id);
-        }
-
-        public async Task<bool> CheckExistPhone(string phone)
-        {
-            return await _context.KhachHangs.AnyAsync(x => x.Phone == phone);
-        }
-
-        public async Task<bool> CheckExistEmail(string email)
-        {
-            return await _context.KhachHangs.AnyAsync(x => x.Email == email);
-        }
-
+        // tạo mới (đã kiểm tra trùng email và số điện thoại)
         public async Task<KhachHangDTO> Create(KhachHangDTO dto)
         {
             try
             {
-                var kh = new KhachHang
+                // Kiểm tra nhập số điện thoại (không được để trống)
+                if (dto.Phone == null || string.IsNullOrWhiteSpace(dto.Phone))
                 {
-                    Name = dto.Name,
-                    Phone = dto.Phone,
-                    Email = dto.Email,
-                    Address = dto.Address,
-                    CreatedAt = DateTime.Now,
-                    RewardPoints = dto.RewardPoints
-                };
+                    throw new InvalidOperationException("Số điện thoại không được để trống!");
+                }
 
-                _context.KhachHangs.Add(kh);
+                // Kiểm tra trùng số điện thoại
+                if (await IsPhoneExist(dto.Phone))
+                {
+                    throw new InvalidOperationException("Số điện thoại đã được sử dụng!");
+                }
+
+                // Kiểm tra trùng email (nếu có nhập)
+                if (!string.IsNullOrEmpty(dto.Email) && await IsEmailExist(dto.Email))
+                {
+                    throw new InvalidOperationException("Email đã được sử dụng!");
+                }
+
+                var entity = _mapper.Map<KhachHang>(dto);
+                entity.CreatedAt = DateTime.Now;
+
+                _context.KhachHangs.Add(entity);
                 await _context.SaveChangesAsync();
 
-                return _mapper.Map<KhachHangDTO>(kh);
+                return _mapper.Map<KhachHangDTO>(entity);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                throw new Exception("Lỗi khi thêm khách hàng: " + e.Message);
+                if (ex is InvalidOperationException)
+                    throw;
+                else
+                    throw new Exception("Lỗi khi thêm khách hàng: " + ex.Message);
             }
         }
 
-        public async Task<KhachHangDTO?> Update(KhachHangDTO dto)
+        // cập nhật (CHỈ CHO SỬA TÊN VÀ ĐỊA CHỈ - KHÔNG CHO SỬA SĐT, EMAIL, ĐIỂM)
+        public async Task<KhachHangDTO?> Update(int id, KhachHangDTO dto)
         {
             try
             {
-                var existing = await _context.KhachHangs
-                    .FirstOrDefaultAsync(x => x.CustomerId == dto.CustomerId);
-
+                var existing = await _context.KhachHangs.FindAsync(id);
                 if (existing == null)
-                    return null;
+                {
+                    return null; // ← 404
+                }
 
+                // CHỈ CHO PHÉP SỬA TÊN VÀ ĐỊA CHỈ
                 existing.Name = dto.Name;
-                existing.Phone = dto.Phone;
-                existing.Email = dto.Email;
                 existing.Address = dto.Address;
-                existing.RewardPoints = dto.RewardPoints;
+
+                // KHÔNG CHO SỬA SỐ ĐIỆN THOẠI, EMAIL, ĐIỂM TÍCH LŨY
+                // existing.Phone = dto.Phone;
+                // existing.Email = dto.Email;
+                // existing.RewardPoints = dto.RewardPoints;
 
                 await _context.SaveChangesAsync();
 
                 return _mapper.Map<KhachHangDTO>(existing);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                throw new Exception("Lỗi khi cập nhật khách hàng: " + e.Message);
+                throw new Exception("Lỗi khi cập nhật khách hàng: " + ex.Message);
             }
+        }
+
+        // kiểm tra phone đã tồn tại chưa (chỉ dùng khi tạo mới)
+        public async Task<bool> IsPhoneExist(string phone)
+        {
+            return await _context.KhachHangs.AnyAsync(x => x.Phone == phone);
+        }
+
+        // kiểm tra email đã tồn tại chưa (chỉ dùng khi tạo mới)
+        public async Task<bool> IsEmailExist(string email)
+        {
+            return await _context.KhachHangs.AnyAsync(x => x.Email == email);
+        }
+
+        // kiểm tra khách hàng có tồn tại không
+        public async Task<bool> IsCustomerExist(int customerId)
+        {
+            return await _context.KhachHangs.AnyAsync(x => x.CustomerId == customerId);
         }
     }
 }

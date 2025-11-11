@@ -6,6 +6,7 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
     public interface INhaCungCapService
     {
         Task<PagedResult<NhaCungCapDTO>> GetAll(int page, int pageSize, string keyword);
+        Task<List<NhaCungCapDTO>> GetAllNCC();
         IQueryable<NhaCungCap> SearchByKeyword(string keyword);
         Task<NhaCungCapDTO?> GetById(int supplierId);
         Task<NhaCungCapDTO> Create(NhaCungCapDTO nhaCungCapDTO);

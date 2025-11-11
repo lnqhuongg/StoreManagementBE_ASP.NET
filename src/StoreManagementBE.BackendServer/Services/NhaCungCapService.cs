@@ -45,6 +45,14 @@ namespace StoreManagementBE.BackendServer.Services
             };
         }
 
+        // hàm này xài cho product
+        public async Task<List<NhaCungCapDTO>> GetAllNCC()
+        {
+            var list = await _context.NhaCungCaps.ToListAsync();
+            //return list DTO
+            return _mapper.Map<List<NhaCungCapDTO>>(list);
+        }
+
         // controller gọi để kết hợp điều kiện
         public IQueryable<NhaCungCap> SearchByKeyword(string keyword)
         {

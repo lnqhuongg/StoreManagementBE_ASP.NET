@@ -42,6 +42,18 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
 
+        [HttpGet("getAllNCC")]
+        public async Task<IActionResult> GetAllNCC()
+        {
+            var data = await _service.GetAllNCC();
+            return Ok(new ApiResponse<List<NhaCungCapDTO>>
+            {
+                Success = true,
+                Message = "Lấy danh sách nhà cung cấp thành công",
+                DataDTO = data
+            });
+        }
+
         // GET: api/suppliers/{id}
         [HttpGet("{id:int}")]
         [ActionName("GetById")]

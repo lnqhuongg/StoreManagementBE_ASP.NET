@@ -18,7 +18,7 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
         public Task<List<SanPhamDTO>> getProductsBySupplierIDAndCategoryID(int? supplier_id, int? category_id);
         public Task<List<SanPhamDTO>> getProductsBySupplierIDAndPrice(int? supplier_id, string? order);
         public Task<List<SanPhamDTO>> getProductsByCategoryIDAndPrice(int? category_id, string? order);
-        public Task<List<SanPhamDTO>> getProductsBysupplierIDAndCategoryIDAndPrice(int? supplier_id, int? category_id, string? order);
+        public Task<List<SanPhamDTO>> getProductsBysupplierIDAndCategoryIDAndPriceAndKeyword(int? supplier_id, int? category_id, string? order, string? keyword);
         public Task<bool> checkExistBarcode(string barcode);
         public Task<bool> checkExistID(int ID);
         public Task<bool> checkBarcodeExistForOtherProducts(int id, string barcode);

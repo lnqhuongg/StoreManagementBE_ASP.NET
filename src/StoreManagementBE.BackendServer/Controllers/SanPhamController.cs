@@ -194,24 +194,38 @@ namespace StoreManagementBE.BackendServer.Controllers
 
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchByKeyword([FromQuery] string keyword)
+        public async Task<IActionResult> SearchByKeyword([FromQuery] string? keyword)
         {
             try
             {
-                var list = _sanPhamService.searchByKeyword(keyword);
-                List<SanPhamDTO> ls = await list;
-                if(ls.Count > 0)
+                if(String.IsNullOrEmpty(keyword))
                 {
+                    var ls = await _sanPhamService.GetAll();
                     return Ok(new ApiResponse<List<SanPhamDTO>>
                     {
-                        Message = "Lấy danh sách sản phẩm theo keyword thành công!",
-                        Success = true,
-                        DataDTO = ls
+                        Message = "Reset dữ liệu sản phẩm!",
+                        DataDTO = ls,
+                        Success = true
                     });
                 } else
                 {
-                    return NoContent();
+                    var list = _sanPhamService.searchByKeyword(keyword);
+                    List<SanPhamDTO> ls = await list;
+                    if (ls.Count > 0)
+                    {
+                        return Ok(new ApiResponse<List<SanPhamDTO>>
+                        {
+                            Message = "Lấy danh sách sản phẩm theo keyword thành công!",
+                            Success = true,
+                            DataDTO = ls
+                        });
+                    }
+                    else
+                    {
+                        return NoContent();
+                    }
                 }
+                    
             } catch (Exception e)
             {
                 return BadRequest(new ApiResponse<SanPhamDTO>
@@ -305,61 +319,15 @@ namespace StoreManagementBE.BackendServer.Controllers
         [HttpGet("advanced_search")]
         public async Task<IActionResult> getProudctsBysupplierIDAndCategoryIDAndPrice([FromQuery] int? supplier_id, 
                                                                         [FromQuery] int? category_id, 
-                                                                        [FromQuery] string? order)
+                                                                        [FromQuery] string? order, [FromQuery] string? keyword)
         {
             try
             {
-                var list = new List<SanPhamDTO>(); ;
-                if(supplier_id.HasValue)
-                {
-                    if(category_id.HasValue)
-                    {
-                        if(order != "")
-                        {
-                            list = await _sanPhamService.getProductsBysupplierIDAndCategoryIDAndPrice(supplier_id, category_id, order);
-                        } else
-                        {
-                            list = await _sanPhamService.getProductsBySupplierIDAndCategoryID(supplier_id, category_id);
-                        }
-                    } else
-                    {
-                        if (order != "")
-                        {
-                            list = await _sanPhamService.getProductsBySupplierIDAndPrice(supplier_id, order);
-                        }
-                        else
-                        {
-                            list = await _sanPhamService.getBySupplierID(supplier_id);
-                        }
-                    }
-                } else
-                {
-                    if (category_id.HasValue)
-                    {
-                        if (order != "")
-                        {
-                            list = await _sanPhamService.getProductsByCategoryIDAndPrice(category_id, order);
-                        }
-                        else
-                        {
-                            list = await _sanPhamService.getByCategoryID(category_id);
-                        }
-                    }
-                    else
-                    {
-                        if (order != "")
-                        {
-                            list = await _sanPhamService.getProductsSortByPrice(order);
-                        }
-                        else
-                        {
-                            list = await _sanPhamService.GetAll();
-                        }
-                    }
-                }
+                var list = await _sanPhamService.getProductsBysupplierIDAndCategoryIDAndPriceAndKeyword(supplier_id, category_id, order, keyword);
+                
                 return Ok(new ApiResponse<List<SanPhamDTO>>
                 {
-                    Message = "Lấy danh sách sản phẩm theo ncc = " + supplier_id + ", lsp = " + category_id + ", giá = " + order + "!",
+                    Message = "Lấy danh sách sản phẩm theo ncc = " + supplier_id + ", lsp = " + category_id + ", giá = " + order + ", keyword = " + keyword + "!",
                     DataDTO = list,
                     Success = true
                 });

@@ -68,6 +68,20 @@ namespace StoreManagementBE.BackendServer.Services
                 throw new Exception("Lỗi khi lấy danh sách sản phẩm: " + e.Message);
             }
         }
+
+        // ham nay cho phieunhap de lay het san pham
+        public async Task<List<SanPhamDTO>> GetAllSP()
+        {
+            try
+            {
+                var list = await _context.SanPhams.Include(x => x.Category).Include(x => x.Supplier).ToListAsync();
+                return _mapper.Map<List<SanPhamDTO>>(list);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Lỗi khi lấy danh sách sản phẩm: " + e.Message);
+            }
+        }
         public async Task<SanPhamDTO> GetById(int id)
         {
             try
@@ -274,6 +288,18 @@ namespace StoreManagementBE.BackendServer.Services
             }
         }
 
-        
+        public async Task<List<SanPhamDTO>> getBySupplierID(int? supplier_id)
+        {
+            try
+            {
+                var list = await _context.SanPhams.Include(sp => sp.Category)
+                .Include(sp => sp.Supplier).Where(x => x.SupplierID == supplier_id).ToListAsync();
+                return _mapper.Map<List<SanPhamDTO>>(list);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Lỗi khi tìm sản phẩm theo nhà cung cấp: " + e.Message);
+            }
+        }
     }
 }

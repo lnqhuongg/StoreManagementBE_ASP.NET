@@ -56,6 +56,38 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
 
+        [HttpGet("GetAllSP")]
+        public async Task<IActionResult> GetAllSP()
+        {
+            try
+            {
+                var list = await _sanPhamService.GetAllSP();
+                Console.WriteLine(">>> Running /api/products GetAll()");
+                if (list.Count > 0)
+                {
+                    var api = new ApiResponse<List<SanPhamDTO>>
+                    {
+                        Message = "Lấy danh sách sản phẩm thành công!",
+                        DataDTO = list,
+                        Success = true
+                    };
+                    return Ok(api);
+                }
+                else
+                {
+                    return NoContent();
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = e.Message,
+                    Success = false
+                });
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -244,6 +276,36 @@ namespace StoreManagementBE.BackendServer.Controllers
                 return BadRequest(new ApiResponse<List<TonKhoDTO>>
                 {
                     Message = "Lỗi khi lấy danh sách tồn kho: " + e.Message,
+                    Success = false
+                });
+            }
+        }
+
+        [HttpGet("supplier/{supplier_id}")]
+        public async Task<IActionResult> GetBySupplier([FromRoute] int supplier_id)
+        {
+            try
+            {
+                var list = await _sanPhamService.getBySupplierID(supplier_id);
+                if (list.Count > 0)
+                {
+                    return Ok(new ApiResponse<List<SanPhamDTO>>
+                    {
+                        Message = "Lấy danh sách sản phẩm theo supplier thành công!",
+                        Success = true,
+                        DataDTO = list
+                    });
+                }
+                else
+                {
+                    return NoContent();
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = e.Message,
                     Success = false
                 });
             }

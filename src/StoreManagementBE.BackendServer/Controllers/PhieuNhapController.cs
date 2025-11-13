@@ -75,7 +75,7 @@ namespace StoreManagementBE.BackendServer.Controllers
                 response.Message = "Thêm phiếu nhập thất bại!";
                 return BadRequest(response);
             }
-            response.Success = true;
+            response.Success = true;    
             response.Message = "Thêm phiếu nhập thành công!";
             response.DataDTO = success;
             return CreatedAtAction(nameof(GetById), new { id = success.ImportId }, response);

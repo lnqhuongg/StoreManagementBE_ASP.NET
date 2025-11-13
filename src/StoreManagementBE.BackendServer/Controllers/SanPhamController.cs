@@ -14,6 +14,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 {
     [ApiController]
     [Route("api/products")]
+
     public class SanPhamController : ControllerBase
     {
         public readonly ISanPhamService _sanPhamService;
@@ -23,6 +24,28 @@ namespace StoreManagementBE.BackendServer.Controllers
         {
             _sanPhamService = sanPhamService;
             _tonKhoService = tonKhoService;
+        }
+
+        [HttpGet("list")]
+        public async Task<IActionResult> getListProduct()
+        {
+            try
+            {
+                var list = await _sanPhamService.getListProducts();
+                return Ok(new ApiResponse<List<SanPhamDTO>>
+                {
+                    Message = "Lấy danh sách sản phẩm thành công!",
+                    DataDTO = list,
+                    Success = true
+                });
+            } catch (Exception e)
+            {
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = e.Message,
+                    Success = false
+                });
+            }
         }
 
         [HttpGet]
@@ -56,27 +79,24 @@ namespace StoreManagementBE.BackendServer.Controllers
             }
         }
 
-        [HttpGet("GetAllSP")]
-        public async Task<IActionResult> GetAllSP()
+        [HttpGet("search")]
+        public async Task<IActionResult> search(
+                                                    [FromQuery] int? category_id,
+                                                    [FromQuery] string? order,
+                                                    [FromQuery] string? keyword)
         {
             try
             {
-                var list = await _sanPhamService.GetAllSP();
-                Console.WriteLine(">>> Running /api/products GetAll()");
-                if (list.Count > 0)
+                var list = await _sanPhamService.searchByCategoryAndSortOrderAndKeyword(category_id, order, keyword);
+
+                var api = new ApiResponse<List<SanPhamDTO>>
                 {
-                    var api = new ApiResponse<List<SanPhamDTO>>
-                    {
-                        Message = "Lấy danh sách sản phẩm thành công!",
-                        DataDTO = list,
-                        Success = true
-                    };
-                    return Ok(api);
-                }
-                else
-                {
-                    return NoContent();
-                }
+                    Message = "Lấy danh sách sản phẩm thành công!",
+                    DataDTO = list,
+                    Success = true
+                };
+
+                return Ok(api);
             }
             catch (Exception e)
             {
@@ -295,6 +315,38 @@ namespace StoreManagementBE.BackendServer.Controllers
                         Success = true,
                         DataDTO = list
                     });
+                }
+                else
+                {
+                    return NoContent();
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(new ApiResponse<SanPhamDTO>
+                {
+                    Message = e.Message,
+                    Success = false
+                });
+            }
+        }
+
+        [HttpGet("GetAllSP")]
+        public async Task<IActionResult> GetAllSP()
+        {
+            try
+            {
+                var list = await _sanPhamService.GetAllSP();
+                Console.WriteLine(">>> Running /api/products GetAll()");
+                if (list.Count > 0)
+                {
+                    var api = new ApiResponse<List<SanPhamDTO>>
+                    {
+                        Message = "Lấy danh sách sản phẩm thành công!",
+                        DataDTO = list,
+                        Success = true
+                    };
+                    return Ok(api);
                 }
                 else
                 {

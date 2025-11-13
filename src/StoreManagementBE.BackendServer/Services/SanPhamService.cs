@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,12 @@ namespace StoreManagementBE.BackendServer.Services
             _imageService = imageService;
         }
 
+        public async Task<List<SanPhamDTO>> getListProducts()
+        {
+            var list = await _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).ToArrayAsync();
+            return _mapper.Map<List<SanPhamDTO>>(list);
+        }
+
         public async Task<PagedResult<SanPhamDTO>> GetAll(int page, int pageSize, string? keyword, string? order, int? categoryID, int? supplierID)
         {
             try
@@ -35,7 +42,7 @@ namespace StoreManagementBE.BackendServer.Services
                 var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).AsQueryable();
                 if(!string.IsNullOrEmpty(keyword))
                 {
-                    query = query.Where(x => x.ProductName == keyword || x.Barcode == keyword);
+                    query = query.Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()) || x.Barcode.ToLower().Contains(keyword.ToLower()));
                 }
                 if (!string.IsNullOrEmpty(order))
                 {
@@ -64,6 +71,33 @@ namespace StoreManagementBE.BackendServer.Services
                     PageSize = pageSize
                 };
             } catch(Exception e)
+            {
+                throw new Exception("Lỗi khi lấy danh sách sản phẩm: " + e.Message);
+            }
+        }
+
+        public async Task<List<SanPhamDTO>> searchByCategoryAndSortOrderAndKeyword(int? categoryID, string? sortOrder, string? keyword)
+        {
+            try
+            {
+                var query = _context.SanPhams.Include(sp => sp.Category).Include(sp => sp.Supplier).AsQueryable();
+                if(categoryID.HasValue)
+                {
+                    query = query.Where(x => x.CategoryID == categoryID);
+                }
+                if (!string.IsNullOrEmpty(sortOrder))
+                {
+                    query = sortOrder.ToLower() == "desc"
+                        ? query.OrderByDescending(p => p.Price)
+                        : query.OrderBy(p => p.Price);
+                }
+                if(!string.IsNullOrEmpty(keyword))
+                {
+                    query = query.Where(x => x.ProductName.ToLower().Contains(keyword.ToLower()) || x.Barcode.ToLower().Contains(keyword.ToLower()));
+                }
+                var list = await query.ToListAsync();
+                return _mapper.Map<List<SanPhamDTO>>(list);
+            } catch (Exception e)
             {
                 throw new Exception("Lỗi khi lấy danh sách sản phẩm: " + e.Message);
             }

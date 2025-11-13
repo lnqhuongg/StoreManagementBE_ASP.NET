@@ -18,63 +18,186 @@ namespace StoreManagementBE.BackendServer.Services
             _mapper = mapper;
         }
 
-        public async Task<List<MaGiamGiaDTO>> GetAll()
+        public async Task<PagedResult<MaGiamGiaDTO>> GetAll(int page, int pageSize, string? keyword, string? discountType)
         {
-            var list = await _context.MaGiamGias.AsNoTracking().ToListAsync();
-            return _mapper.Map<List<MaGiamGiaDTO>>(list);
+            var query = _context.MaGiamGias.AsQueryable();
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                var lowerKeyword = keyword.ToLower();
+                query = query.Where(x => x.PromoCode.ToLower().Contains(lowerKeyword) ||
+                                         (x.Description != null && x.Description.ToLower().Contains(lowerKeyword)));
+            }
+
+            if (!string.IsNullOrEmpty(discountType))
+            {
+                query = query.Where(x => x.DiscountType == discountType);
+            }
+
+            var total = await query.CountAsync();
+            var data = await query
+                .OrderByDescending(x => x.PromoId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<MaGiamGiaDTO>
+            {
+                Data = _mapper.Map<List<MaGiamGiaDTO>>(data),
+                Total = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<MaGiamGiaDTO?> GetById(int id)
         {
             var entity = await _context.MaGiamGias.FindAsync(id);
-            return _mapper.Map<MaGiamGiaDTO>(entity);
+            return entity == null ? null : _mapper.Map<MaGiamGiaDTO>(entity);
         }
 
-        public async Task<MaGiamGiaDTO?> Create(MaGiamGiaDTO dto)
+        public async Task<ApiResponse<MaGiamGiaDTO>> Create(MaGiamGiaDTO dto)
         {
-            var entity = _mapper.Map<MaGiamGia>(dto);
-            _context.MaGiamGias.Add(entity);
-            await _context.SaveChangesAsync();
-            return _mapper.Map<MaGiamGiaDTO>(entity);
+            try
+            {
+                var exists = await _context.MaGiamGias.AnyAsync(x => x.PromoCode == dto.PromoCode);
+                if (exists)
+                {
+                    return new ApiResponse<MaGiamGiaDTO>
+                    {
+                        Success = false,
+                        Message = "Mã giảm giá đã tồn tại!"
+                    };
+                }
+
+                var entity = _mapper.Map<MaGiamGia>(dto);
+                _context.MaGiamGias.Add(entity);
+                await _context.SaveChangesAsync();
+
+                var resultDto = _mapper.Map<MaGiamGiaDTO>(entity);
+
+                return new ApiResponse<MaGiamGiaDTO>
+                {
+                    Success = true,
+                    Message = "Thêm mã giảm giá thành công!",
+                    DataDTO = resultDto
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<MaGiamGiaDTO>
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
         }
 
-        public async Task<MaGiamGiaDTO?> Update(MaGiamGiaDTO dto)
+        public async Task<ApiResponse<MaGiamGiaDTO>> Update(int id, MaGiamGiaDTO dto)
         {
-            var entity = await _context.MaGiamGias.FindAsync(dto.PromoId);
-            if (entity == null) return null;
+            try
+            {
+                var existing = await _context.MaGiamGias.FindAsync(id);
+                if (existing == null)
+                {
+                    return new ApiResponse<MaGiamGiaDTO>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy mã giảm giá để cập nhật!"
+                    };
+                }
 
-            entity.PromoCode = dto.PromoCode;
-            entity.Description = dto.Description;
-            entity.DiscountType = dto.DiscountType;
-            entity.DiscountValue = dto.DiscountValue;
-            entity.StartDate = dto.StartDate;
-            entity.EndDate = dto.EndDate;
-            entity.MinOrderAmount = dto.MinOrderAmount;
-            entity.UsageLimit = dto.UsageLimit;
-            entity.UsedCount = dto.UsedCount;
-            entity.Status = dto.Status;
+                if (dto.PromoCode != existing.PromoCode && await _context.MaGiamGias.AnyAsync(x => x.PromoCode == dto.PromoCode))
+                {
+                    return new ApiResponse<MaGiamGiaDTO>
+                    {
+                        Success = false,
+                        Message = "Mã giảm giá đã được sử dụng bởi mã khác!"
+                    };
+                }
 
-            await _context.SaveChangesAsync();
-            return _mapper.Map<MaGiamGiaDTO>(entity);
+                existing.PromoCode = dto.PromoCode;
+                existing.Description = dto.Description;
+                existing.DiscountType = dto.DiscountType;
+                existing.DiscountValue = dto.DiscountValue;
+                existing.StartDate = dto.StartDate;
+                existing.EndDate = dto.EndDate;
+                existing.MinOrderAmount = dto.MinOrderAmount;
+                existing.UsageLimit = dto.UsageLimit;
+                existing.UsedCount = dto.UsedCount;
+                existing.Status = dto.Status;
+
+                await _context.SaveChangesAsync();
+
+                var resultDto = _mapper.Map<MaGiamGiaDTO>(existing);
+
+                return new ApiResponse<MaGiamGiaDTO>
+                {
+                    Success = true,
+                    Message = "Cập nhật mã giảm giá thành công!",
+                    DataDTO = resultDto
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<MaGiamGiaDTO>
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
         }
 
-        public async Task<bool> Delete(int id)
+        public async Task<ApiResponse<bool>> Delete(int id)
         {
-            var entity = await _context.MaGiamGias.FindAsync(id);
-            if (entity == null) return false;
-            _context.MaGiamGias.Remove(entity);
-            await _context.SaveChangesAsync();
-            return true;
+            try
+            {
+                var existing = await _context.MaGiamGias.FindAsync(id);
+                if (existing == null)
+                {
+                    return new ApiResponse<bool>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy mã giảm giá để xóa!",
+                        DataDTO = false
+                    };
+                }
+
+                _context.MaGiamGias.Remove(existing);
+                await _context.SaveChangesAsync();
+
+                return new ApiResponse<bool>
+                {
+                    Success = true,
+                    Message = "Xóa mã giảm giá thành công!",
+                    DataDTO = true
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<bool>
+                {
+                    Success = false,
+                    Message = ex.Message,
+                    DataDTO = false
+                };
+            }
         }
 
         public async Task<List<MaGiamGiaDTO>> SearchByKeyword(string keyword)
         {
-            keyword = keyword?.Trim().ToLower() ?? "";
-            var list = await _context.MaGiamGias
-                .Where(x => x.PromoCode.ToLower().Contains(keyword) ||
-                            (x.Description != null && x.Description.ToLower().Contains(keyword)))
-                .ToListAsync();
-            return _mapper.Map<List<MaGiamGiaDTO>>(list);
+            IQueryable<MaGiamGia> query = _context.MaGiamGias;
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                keyword = keyword.Trim().ToLower();
+                query = query.Where(x =>
+                    x.PromoCode.ToLower().Contains(keyword) ||
+                    (x.Description != null && x.Description.ToLower().Contains(keyword)));
+            }
+
+            var result = await query.ToListAsync();
+            return _mapper.Map<List<MaGiamGiaDTO>>(result);
         }
     }
 }

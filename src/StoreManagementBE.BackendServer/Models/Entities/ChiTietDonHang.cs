@@ -8,21 +8,33 @@ namespace StoreManagementBE.BackendServer.Models.Entities
     public class ChiTietDonHang
     {
         [Key]
-        [Column("order_item_id")] 
+        [Column("order_item_id")]
         public int OrderItemId { get; set; }
-        [Column("order_id")] 
+
+        [Column("order_id")]
         public int? OrderId { get; set; }
-        [Column("product_id")] 
+
+        [Column("product_id")]
         public int? ProductId { get; set; }
-        [Column("quantity")] 
+
+        [Column("quantity")]
         public int Quantity { get; set; }
-        [Column("price")] 
+
+        [Column("price")]
         public decimal Price { get; set; }
-        [Column("subtotal")] 
+
+        [Column("subtotal")]
         public decimal Subtotal { get; set; }
 
+        // --- MỐI QUAN HỆ VỚI ĐƠN HÀNG (Đã có) ---
         [ForeignKey(nameof(OrderId))]
-        [JsonIgnore]                 
+        [JsonIgnore]
         public DonHang? Order { get; set; }
+
+        // --- 👇 BỔ SUNG PHẦN NÀY 👇 ---
+        // Liên kết sang bảng SanPham để lấy tên sản phẩm
+        // Lưu ý: Class SanPham phải tồn tại trong project của bạn
+        [ForeignKey(nameof(ProductId))]
+        public SanPham? Product { get; set; }
     }
 }

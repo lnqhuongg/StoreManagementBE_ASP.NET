@@ -21,30 +21,36 @@ namespace StoreManagementBE.BackendServer.Services
         // ==================== 1. LỌC DỮ LIỆU (Tương tự SearchByKeyword) ====================
         public IQueryable<DonHang> ApplyFilter(OrderFilterDTO filter)
         {
-            var q = _context.DonHangs.AsQueryable();
+            // 1. Include Khách hàng và Nhân viên ngay từ đầu để tìm kiếm
+            var q = _context.DonHangs
+                .Include(x => x.Customer) // Để tìm theo tên khách
+                .Include(x => x.User)     // Để tìm theo tên nhân viên (nếu có quan hệ)
+                .AsQueryable();
 
-            // 1.1 Tìm theo từ khóa (Mã đơn)
+            // 2. Logic tìm kiếm đa năng (Keyword)
             if (!string.IsNullOrWhiteSpace(filter.Keyword))
             {
-                var kw = filter.Keyword.Trim();
-                if (int.TryParse(kw, out var id))
-                {
-                    q = q.Where(x => x.OrderId == id);
-                }
+                var kw = filter.Keyword.Trim().ToLower(); // Chuyển về chữ thường để tìm không phân biệt hoa thường
+
+                // Tìm theo: Mã đơn OR Tên khách OR Tên nhân viên
+                q = q.Where(x =>
+                    x.OrderId.ToString().Contains(kw) ||
+                    (x.Customer != null && x.Customer.Name.ToLower().Contains(kw)) ||
+                    (x.User != null && x.User.FullName.ToLower().Contains(kw)) // Giả sử User có cột FullName
+                );
             }
 
-            // 1.2 Lọc theo khoảng ngày (Từ ngày... Đến ngày...)
+            // 3. Lọc theo ngày
             if (filter.DateFrom.HasValue)
                 q = q.Where(x => x.OrderDate >= filter.DateFrom);
 
             if (filter.DateTo.HasValue)
             {
-                // Mẹo: Lấy đến hết ngày hôm đó (23:59:59)
                 var end = filter.DateTo.Value.Date.AddDays(1).AddTicks(-1);
                 q = q.Where(x => x.OrderDate <= end);
             }
 
-            // 1.3 Lọc theo tổng tiền (Từ tiền... Đến tiền...)
+            // 4. Lọc theo tổng tiền
             if (filter.MinTotal.HasValue)
                 q = q.Where(x => (x.TotalAmount ?? 0) >= filter.MinTotal.Value);
 

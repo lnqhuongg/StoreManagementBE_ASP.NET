@@ -16,8 +16,14 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         [Column("customer_id")]
         public int? CustomerId { get; set; }
 
+        [ForeignKey(nameof(CustomerId))]
+        public KhachHang? Customer { get; set; }
+
         [Column("user_id")]
         public int? UserId { get; set; }
+
+        [ForeignKey(nameof(UserId))]
+        public NhanVien? User { get; set; }
 
         [Column("promo_id")]
         public int? PromoId { get; set; }

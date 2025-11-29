@@ -34,10 +34,16 @@ namespace StoreManagementBE.BackendServer.Mappings
             CreateMap<NhaCungCap, NhaCungCapDTO>().ReverseMap();
 
             // entity donhang <-> donhangDTO
-            CreateMap<DonHang, DonHangDTO>().ReverseMap();
+            CreateMap<DonHang, DonHangDTO>()
+    .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Name : ""))
+    .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : ""))
+
+    .ReverseMap();
 
             // entity chitietdonhang <-> chitietdonhangDTO
-            CreateMap<ChiTietDonHang, ChiTietDonHangDTO>().ReverseMap();
+            CreateMap<ChiTietDonHang, ChiTietDonHangDTO>()
+    .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.ProductName)) // Map tên sản phẩm
+    .ReverseMap();
 
             // entity thanhtoan <-> thanhtoanDTO
             CreateMap<ThanhToan, ThanhToanDTO>().ReverseMap();

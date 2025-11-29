@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.DonHangDTO;
 using StoreManagementBE.BackendServer.Models;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
@@ -92,13 +93,21 @@ namespace StoreManagementBE.BackendServer.Services
         public async Task<DonHangDTO?> GetById(int orderId)
         {
             var e = await _context.DonHangs
-                .Include(x => x.Items)
+                .Include(x => x.Promotion)
+                .Include(x => x.Customer) 
+                .Include(x => x.User)
                 .Include(x => x.Payments)
+                .Include(x => x.Items)
+                    .ThenInclude(d => d.Product)
+                        .ThenInclude(p => p.Category)
                 .FirstOrDefaultAsync(x => x.OrderId == orderId);
 
             if (e == null) return null;
 
-            return _mapper.Map<DonHangDTO>(e);
+            var dto = _mapper.Map<DonHangDTO>(e);
+            dto.CustomerName = e.Customer?.Name ?? "";
+            dto.UserName = e.User?.FullName ?? "";
+            return dto;
         }
 
         // ==================== 4. TẠO MỚI (Create) ====================

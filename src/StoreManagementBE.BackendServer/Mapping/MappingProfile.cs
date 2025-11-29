@@ -2,9 +2,9 @@
 using AutoMapper;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
+using StoreManagementBE.BackendServer.DTOs.DonHangDTO;
 using StoreManagementBE.BackendServer.DTOs.ChiTietPhieuNhap;
 using StoreManagementBE.BackendServer.DTOs.PhieuNhap;
-using StoreManagementBE.BackendServer.DTOs.AuthenticationDTO;
 using StoreManagementBE.BackendServer.Models.Entities;
 
 namespace StoreManagementBE.BackendServer.Mappings
@@ -35,15 +35,13 @@ namespace StoreManagementBE.BackendServer.Mappings
 
             // entity donhang <-> donhangDTO
             CreateMap<DonHang, DonHangDTO>()
-    .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Name : ""))
-    .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : ""))
+                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Name : ""))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : ""))
 
-    .ReverseMap();
+                .ReverseMap();
 
             // entity chitietdonhang <-> chitietdonhangDTO
-            CreateMap<ChiTietDonHang, ChiTietDonHangDTO>()
-    .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.ProductName)) // Map tên sản phẩm
-    .ReverseMap();
+            CreateMap<ChiTietDonHang, ChiTietDonHangDTO>().ReverseMap();
 
             // entity thanhtoan <-> thanhtoanDTO
             CreateMap<ThanhToan, ThanhToanDTO>().ReverseMap();

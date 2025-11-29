@@ -28,8 +28,14 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         [Column("promo_id")]
         public int? PromoId { get; set; }
 
+        [ForeignKey(nameof(PromoId))]
+        public MaGiamGia? Promotion { get; set; }
+
         [Column("order_date")]
         public DateTime? OrderDate { get; set; }
+
+        [Column("status")]
+        public string? Status { get; set; }
 
         [Column("total_amount")]
         public decimal? TotalAmount { get; set; }

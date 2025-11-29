@@ -22,6 +22,7 @@ namespace StoreManagementBE.BackendServer.Infrastructure.DI
             services.AddScoped<IKhachHangService, KhachHangService>();
             services.AddScoped<IDonHangService, DonHangService>();
             services.AddScoped<ITonKhoService, TonKhoService>();
+            services.AddScoped<IAuthenticationService, AuthenticationService>();
 
             return services;
         }

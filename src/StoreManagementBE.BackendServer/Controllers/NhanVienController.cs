@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using StoreManagementBE.BackendServer.DTOs;
+using StoreManagementBE.BackendServer.DTOs.AuthenticationDTO;
+using StoreManagementBE.BackendServer.Services;
 using StoreManagementBE.BackendServer.Services.Interfaces;
 
 namespace StoreManagementBE.BackendServer.Controllers
@@ -9,10 +11,12 @@ namespace StoreManagementBE.BackendServer.Controllers
     public class NhanVienController : ControllerBase
     {
         private readonly INhanVienService _service;
+        private readonly IAuthenticationService _authenService;
 
-        public NhanVienController(INhanVienService service)
+        public NhanVienController(INhanVienService service, IAuthenticationService authenticationService)
         {
             _service = service;
+            _authenService = authenticationService;
         }
 
         // GET: api/users
@@ -115,6 +119,37 @@ namespace StoreManagementBE.BackendServer.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new ApiResponse<NhanVienDTO> { Message = ex.Message, Success = false }); // 400
+            }
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] AuthenticationDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var user = await _authenService.Authenticate(dto);
+
+                if (user == null)
+                    return NotFound(new ApiResponse<NhanVienDTO>
+                    {
+                        Message = "Sai username hoặc mật khẩu!",
+                        Success = false,
+                        DataDTO = null
+                    });
+
+                return Ok(new ApiResponse<NhanVienDTO>
+                {
+                    Message = "Đăng nhập thành công!",
+                    Success = true,
+                    DataDTO = user
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
             }
         }
 

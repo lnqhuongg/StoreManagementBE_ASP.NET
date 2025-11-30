@@ -6,6 +6,7 @@ using StoreManagementBE.BackendServer.DTOs.DonHangDTO;
 using StoreManagementBE.BackendServer.DTOs.ChiTietPhieuNhap;
 using StoreManagementBE.BackendServer.DTOs.PhieuNhap;
 using StoreManagementBE.BackendServer.Models.Entities;
+using StoreManagementBE.BackendServer.DTOs.ThanhToanDTO;
 
 namespace StoreManagementBE.BackendServer.Mappings
 {
@@ -44,7 +45,7 @@ namespace StoreManagementBE.BackendServer.Mappings
             CreateMap<ChiTietDonHang, ChiTietDonHangDTO>().ReverseMap();
 
             // entity thanhtoan <-> thanhtoanDTO
-            CreateMap<ThanhToan, ThanhToanDTO>().ReverseMap();
+            CreateMap<ThanhToan, ThanhToanReturnDTO>().ReverseMap();
 
             // entity khachhang <-> khachhangDTO
             CreateMap<KhachHang, KhachHangDTO>().ReverseMap();

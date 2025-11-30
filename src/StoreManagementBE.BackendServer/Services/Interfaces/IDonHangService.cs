@@ -16,6 +16,6 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
         Task<DonHangDTO?> GetById(int orderId);
 
         // 4. Tạo mới đơn hàng (Giống Create bên LoaiSanPham)
-        Task<DonHangDTO> Create(DonHangDTO donHangDTO);
+        Task<DonHangDTO> CreateStaff(CreateOrderDTO dto);
     }
 }

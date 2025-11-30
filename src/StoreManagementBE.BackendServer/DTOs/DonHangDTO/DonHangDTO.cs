@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using StoreManagementBE.BackendServer.DTOs.ThanhToanDTO;
 
 namespace StoreManagementBE.BackendServer.DTOs.DonHangDTO
 {
@@ -33,6 +34,6 @@ namespace StoreManagementBE.BackendServer.DTOs.DonHangDTO
 
         public List<ChiTietDonHangDTO>? Items { get; set; }
 
-        public List<ThanhToanDTO>? Payments { get; set; }
+        public List<ThanhToanReturnDTO>? Payments { get; set; }
     }
 }

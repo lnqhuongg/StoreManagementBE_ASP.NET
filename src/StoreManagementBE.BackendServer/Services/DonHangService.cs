@@ -111,44 +111,66 @@ namespace StoreManagementBE.BackendServer.Services
         }
 
         // ==================== 4. TẠO MỚI (Create) ====================
-        public async Task<DonHangDTO> Create(DonHangDTO donHangDTO)
+        public async Task<DonHangDTO> CreateStaff(CreateOrderDTO dto)
         {
+            using var tran = await _context.Database.BeginTransactionAsync();
+
             try
             {
-                // Map từ DTO sang Entity
-                // Entity Framework sẽ tự động thêm cả các dòng trong bảng OrderItems 
-                // nếu DTO có chứa danh sách Items
-                var orderEntity = _mapper.Map<DonHang>(donHangDTO);
-
-                // Gán ngày tạo là hiện tại nếu người dùng không gửi lên
-                if (orderEntity.OrderDate == null || orderEntity.OrderDate == DateTime.MinValue)
+                // 1) Map Order
+                var orderEntity = new DonHang
                 {
-                    orderEntity.OrderDate = DateTime.Now;
-                }
-                if (orderEntity.Items != null)
-                {
-                    foreach (var item in orderEntity.Items)
+                    CustomerId = dto.CustomerId,
+                    UserId = dto.UserId,
+                    PromoId = dto.PromoId,
+                    TotalAmount = dto.TotalAmount ?? 0,
+                    DiscountAmount = dto.DiscountAmount,
+                    OrderDate = DateTime.Now,
+                    Status = "paid",
+                    Items = dto.Items?.Select(i => new ChiTietDonHang
                     {
-                        // QUAN TRỌNG: Set Product = null để EF không cố tạo ra sản phẩm mới
-                        item.Product = null;
+                        ProductId = i.ProductId,
+                        Quantity = i.Quantity,
+                        Price = i.Price,
+                        Subtotal = i.Subtotal
+                    }).ToList()
+                };
 
-                        // Đảm bảo ProductId được giữ nguyên
-                        // (item.ProductId đã có giá trị từ DTO gửi xuống)
+                // 2) Insert Order + Items
+                _context.DonHangs.Add(orderEntity);
+                await _context.SaveChangesAsync();   // <-- sinh OrderId
+
+                // 3) Insert Payments nếu có
+                if (dto.Payments != null)
+                {
+                    foreach (var p in dto.Payments)
+                    {
+                        var payment = new ThanhToan
+                        {
+                            OrderId = orderEntity.OrderId,
+                            Amount = p.Amount,
+                            PaymentMethod = p.PaymentMethod,
+                            PaymentDate = DateTime.Now
+                        };
+
+                        _context.ThanhToans.Add(payment);
                     }
+
+                    await _context.SaveChangesAsync();
                 }
 
-                _context.DonHangs.Add(orderEntity);
-                await _context.SaveChangesAsync();
+                await tran.CommitAsync();
 
-                // Trả về kết quả sau khi lưu (để lấy được OrderId vừa sinh ra)
+                // 4) Trả về DTO
                 return _mapper.Map<DonHangDTO>(orderEntity);
             }
             catch (Exception ex)
             {
-                // Lấy lỗi sâu nhất bên trong (InnerException) - nơi chứa thông báo SQL
-                var rawError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                throw new Exception("Chi tiết lỗi SQL: " + rawError);
+                await tran.RollbackAsync();
+                var msg = ex.InnerException?.Message ?? ex.Message;
+                throw new Exception("SQL Error: " + msg);
             }
         }
+
     }
 }

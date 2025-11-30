@@ -50,6 +50,17 @@ namespace StoreManagementBE.BackendServer.Services
             };
         }
 
+        public async Task<List<MaGiamGiaDTO>> GetAllActive()
+        {
+            var entities = await _context.MaGiamGias
+                .Where(x => x.Status == "Active" && 
+                            (x.StartDate == null || x.StartDate <= DateTime.UtcNow) &&
+                            (x.EndDate == null || x.EndDate >= DateTime.UtcNow))
+                .ToListAsync();
+
+            return _mapper.Map<List<MaGiamGiaDTO>>(entities);
+        }
+
         public async Task<MaGiamGiaDTO?> GetById(int id)
         {
             var entity = await _context.MaGiamGias.FindAsync(id);
@@ -198,6 +209,20 @@ namespace StoreManagementBE.BackendServer.Services
 
             var result = await query.ToListAsync();
             return _mapper.Map<List<MaGiamGiaDTO>>(result);
+        }
+
+        public async Task<MaGiamGiaDTO?> updateAfterCreatedOrder(int? promoId)
+        {
+            var maGiamGia = await _context.MaGiamGias.FirstOrDefaultAsync(x => x.PromoId == promoId);
+            if (maGiamGia == null)
+            {
+                return null;
+            }
+            maGiamGia.UsedCount += 1;
+            maGiamGia.UsageLimit -= 1;
+            _context.MaGiamGias.Update(maGiamGia);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<MaGiamGiaDTO>(maGiamGia);
         }
     }
 }

@@ -84,5 +84,17 @@ namespace StoreManagementBE.BackendServer.Controllers
                 DataDTO = result
             });
         }
+
+        [HttpGet("active")]
+        public async Task<IActionResult> GetAllActive()
+        {
+            var result = await _service.GetAllActive();
+            return Ok(new ApiResponse<List<MaGiamGiaDTO>>
+            {
+                Success = true,
+                Message = "Lấy danh sách mã giảm giá đang hoạt động thành công!",
+                DataDTO = result
+            });
+        }
     }
 }

@@ -11,9 +11,18 @@ namespace StoreManagementBE.BackendServer.Controllers
     {
         private readonly IDonHangService _service;
 
-        public DonHangController(IDonHangService service)
+        private readonly ITonKhoService _TonKhoservice;
+
+        private readonly IMaGiamGiaService _maGiamGiaService;
+
+        private readonly IKhachHangService _khachHangService;
+
+        public DonHangController(IDonHangService service, ITonKhoService tonKhoservice, IMaGiamGiaService maGiamGiaService, IKhachHangService khachHangService)
         {
             _service = service;
+            _TonKhoservice = tonKhoservice;
+            _maGiamGiaService = maGiamGiaService;
+            _khachHangService = khachHangService;
         }
 
         // 1. GET: api/orders (Lấy danh sách có phân trang & lọc)
@@ -91,7 +100,7 @@ namespace StoreManagementBE.BackendServer.Controllers
 
         // 3. POST: api/orders (Tạo đơn hàng mới)
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] DonHangDTO donHangDTO)
+        public async Task<IActionResult> Create([FromBody] CreateOrderDTO donHangDTO)
         {
             try
             {
@@ -101,7 +110,26 @@ namespace StoreManagementBE.BackendServer.Controllers
                 }
 
                 // Gọi service tạo đơn hàng (bao gồm cả chi tiết sản phẩm nếu có trong DTO)
-                var newOrder = await _service.Create(donHangDTO);
+                var newOrder = await _service.CreateStaff(donHangDTO);
+
+                if (newOrder != null) {
+                    // Cập nhật tồn kho cho từng sản phẩm trong đơn hàng
+                    foreach (var item in donHangDTO.Items)
+                    {
+                        await _TonKhoservice.deductQuantityOfCreatedOrder(item.ProductId, item.Quantity);    
+                    }
+                }
+
+                if (donHangDTO.PromoId != null)
+                {
+                    await _maGiamGiaService.updateAfterCreatedOrder(donHangDTO.PromoId);
+                }
+                if (donHangDTO.CustomerId != null)
+                {
+                    await _khachHangService.addRewardPoints(donHangDTO.CustomerId);
+                    if (donHangDTO.rewardPoints != null)
+                        await _khachHangService.deductRewardPoints(donHangDTO.CustomerId, donHangDTO.rewardPoints);
+                }
 
                 // Trả về mã 201 Created và đường dẫn đến API xem chi tiết đơn hàng vừa tạo
                 return CreatedAtAction(

@@ -29,6 +29,6 @@ namespace StoreManagementBE.BackendServer.Models.Entities
         public DateTime? CreatedAt { get; set; } = DateTime.Now;
 
         [Column("reward_points", TypeName = "int")]
-        public int RewardPoints { get; set; } = 0;
+        public int? RewardPoints { get; set; } = 0;
     }
 }

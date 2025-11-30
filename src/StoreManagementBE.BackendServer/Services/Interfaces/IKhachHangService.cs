@@ -28,5 +28,7 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
 
         // kiểm tra khách hàng có tồn tại không
         Task<bool> IsCustomerExist(int customerId);
+        Task<KhachHangDTO?> addRewardPoints(int? customerId);
+        Task<KhachHangDTO?> deductRewardPoints(int? customerId, int? pointsToDeduct);
     }
 }

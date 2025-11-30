@@ -10,5 +10,7 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
         Task<ApiResponse<MaGiamGiaDTO>> Update(int id, MaGiamGiaDTO dto);
         Task<ApiResponse<bool>> Delete(int id);
         Task<List<MaGiamGiaDTO>> SearchByKeyword(string keyword);
+        Task<List<MaGiamGiaDTO>> GetAllActive();
+        Task<MaGiamGiaDTO?> updateAfterCreatedOrder(int? promoId);
     }
 }

@@ -32,5 +32,33 @@ namespace StoreManagementBE.BackendServer.Services
                 throw new Exception(e.Message);
             }
         }
+
+        public async Task<TonKhoDTO> UpdateInventory(int productID, int quantityChange)
+        {
+            var tonkho = await _context.TonKhos.FirstOrDefaultAsync(x => x.ProductId == productID);
+            if (tonkho == null)
+            {
+                throw new Exception("Không tìm thấy tồn kho cho sản phẩm với ID: " + productID);
+            }
+            tonkho.Quantity += quantityChange;
+            tonkho.UpdatedAt = DateTime.UtcNow;
+            _context.TonKhos.Update(tonkho);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<TonKhoDTO>(tonkho);
+        }
+
+        public async Task<TonKhoDTO> deductQuantityOfCreatedOrder(int productID, int quantityChange)
+        {
+            var tonkho = await _context.TonKhos.FirstOrDefaultAsync(x => x.ProductId == productID);
+            if (tonkho == null)
+            {
+                return null;
+            }
+            tonkho.Quantity -= quantityChange;
+            tonkho.UpdatedAt = DateTime.UtcNow;
+            _context.TonKhos.Update(tonkho);
+            await _context.SaveChangesAsync();
+            return _mapper.Map<TonKhoDTO>(tonkho);
+        }
     }
 }

@@ -154,5 +154,35 @@ namespace StoreManagementBE.BackendServer.Services
         {
             return await _context.KhachHangs.AnyAsync(x => x.CustomerId == customerId);
         }
+
+        public async Task<KhachHangDTO?> addRewardPoints(int? customerId)
+        {   
+            var customer = await _context.KhachHangs.FindAsync(customerId);
+            if (customer == null)
+            {
+                return null; // ← 404
+            }
+            // Cập nhật điểm tích lũy (ví dụ: mỗi đơn hàng thành công được cộng 500 điểm)
+            customer.RewardPoints += 500;
+            await _context.SaveChangesAsync();
+            return _mapper.Map<KhachHangDTO>(customer);
+        }
+
+        public async Task<KhachHangDTO?> deductRewardPoints(int? customerId, int? pointsToDeduct)
+        {
+            var customer = await _context.KhachHangs.FindAsync(customerId);
+            if (customer == null)
+            {
+                return null; // ← 404
+            }
+            // Trừ điểm tích lũy
+            customer.RewardPoints -= pointsToDeduct;
+            if (customer.RewardPoints < 0)
+            {
+                customer.RewardPoints = 0; // Đảm bảo điểm không âm
+            }
+            await _context.SaveChangesAsync();
+            return _mapper.Map<KhachHangDTO>(customer);
+        }
     }
 }

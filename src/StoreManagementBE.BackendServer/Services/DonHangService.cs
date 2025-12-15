@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.DTOs.DonHangDTO;
+using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Models;
 using StoreManagementBE.BackendServer.Models.Entities;
 using StoreManagementBE.BackendServer.Services.Interfaces;
@@ -172,5 +173,112 @@ namespace StoreManagementBE.BackendServer.Services
             }
         }
 
+        public async Task<long> GetTotalRevenue()
+        {
+            var totalRevenue = await _context.DonHangs
+                .Where(o => o.Status == "paid")
+                .SumAsync(o => o.TotalAmount ?? 0);
+            return (long)totalRevenue;
+        }
+
+        public List<long> GetRevenueByMonth(int month, int year)
+        {
+            int days = DateTime.DaysInMonth(year, month);
+            List<long> result = new();
+
+            for (int day = 1; day <= days; day++)
+            {
+                var start = new DateTime(year, month, day);
+                var end = start.AddDays(1);
+
+                long total = (long)_context.DonHangs
+                    .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                    .Sum(o => o.TotalAmount ?? 0);
+
+                result.Add(total);
+            }
+
+            return result;
+        }
+
+        public List<long> GetRevenueByYear(int year)
+        {
+            List<long> result = new();
+
+            for (int month = 1; month <= 12; month++)
+            {
+                var start = new DateTime(year, month, 1);
+                var end = start.AddMonths(1);
+
+                long total = (long)_context.DonHangs
+                    .Where(o => o.OrderDate >= start && o.OrderDate < end)
+                    .Sum(o => o.TotalAmount ?? 0);
+
+                result.Add(total);
+            }
+
+            return result;
+        }
+
+        public async Task<int> GetTotalPaidOrder()
+        {
+            var totalPaidOrders = await _context.DonHangs
+                .CountAsync(o => o.Status == "paid");
+
+            return totalPaidOrders;
+        }
+
+        public async Task<List<object>> GetTop5Products()
+        {
+            // 1. Thực hiện query lấy dữ liệu ẩn danh
+            var query = await _context.ChiTietDonHangs
+                .GroupBy(item => item.ProductId)
+                .Select(group => new
+                {
+                    ProductId = group.Key,
+                    TotalQuantity = group.Sum(item => item.Quantity),
+                    // Tính tổng tiền (Số lượng * Giá tại thời điểm bán)
+                    TotalRevenue = group.Sum(item => (long)item.Quantity * (long)item.Price)
+                })
+                .OrderByDescending(g => g.TotalQuantity)
+                .Take(5)
+                .Join(_context.SanPhams,
+                      stat => stat.ProductId,
+                      prod => prod.ProductID,
+                      (stat, prod) => new // <--- TẠO OBJECT ẨN DANH Ở ĐÂY
+                      {
+                          // Đặt tên biến kiểu camelCase để Frontend đỡ phải map lại
+                          productId = prod.ProductID,
+                          productName = prod.ProductName,
+                          soldQty = stat.TotalQuantity,
+                          revenue = stat.TotalRevenue
+                      })
+                .ToListAsync();
+
+            // 2. Ép kiểu danh sách ẩn danh về List<object> để return được qua Interface
+            return query.Cast<object>().ToList();
+        }
+
+        // Services/DonHangService.cs
+
+        public async Task<List<object>> GetPaymentMethodStats()
+        {
+            var query = _context.ThanhToans.AsQueryable();
+
+            // 1. Lấy dữ liệu ẩn danh (Anonymous Type) từ DB lên Memory trước
+            var rawData = await query
+                .GroupBy(x => x.PaymentMethod)
+                .Select(g => new
+                {
+                    // Đặt tên thuộc tính chữ thường (camelCase) để khớp luôn với Frontend React
+                    method = g.Key ?? "Khác",
+                    percent = Math.Round((double)g.Count() / query.Count() * 100, 0)
+                    })
+                .ToListAsync();
+
+            // 2. Ép kiểu về List<object> để return được qua Interface
+            // (Vì rawData đang là List<AnonymousType>, không return thẳng được nếu Interface đòi List<object>)
+            return rawData.Cast<object>().ToList();
+        }
     }
 }

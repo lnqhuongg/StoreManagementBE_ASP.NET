@@ -60,5 +60,11 @@ namespace StoreManagementBE.BackendServer.Services
             await _context.SaveChangesAsync();
             return _mapper.Map<TonKhoDTO>(tonkho);
         }
+
+        public Task<int> GetLowStockCount()
+        {
+            int lowStockThreshold = 10; // Ngưỡng tồn kho thấp
+            return _context.TonKhos.CountAsync(tk => tk.Quantity < lowStockThreshold);
+        }
     }
 }

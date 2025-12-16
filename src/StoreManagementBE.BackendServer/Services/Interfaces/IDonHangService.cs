@@ -1,5 +1,6 @@
 ﻿using StoreManagementBE.BackendServer.DTOs;
 using StoreManagementBE.BackendServer.DTOs.DonHangDTO;
+using StoreManagementBE.BackendServer.DTOs.SanPhamDTO;
 using StoreManagementBE.BackendServer.Models.Entities;
 
 namespace StoreManagementBE.BackendServer.Services.Interfaces
@@ -17,5 +18,13 @@ namespace StoreManagementBE.BackendServer.Services.Interfaces
 
         // 4. Tạo mới đơn hàng (Giống Create bên LoaiSanPham)
         Task<DonHangDTO> CreateStaff(CreateOrderDTO dto);
+
+        Task<long> GetTotalRevenue();
+        Task<int> GetTotalPaidOrder();
+
+        public List<long> GetRevenueByMonth(int month, int year);
+        public List<long> GetRevenueByYear(int year);
+        public Task<List<object>> GetTop5Products();
+        Task<List<object>> GetPaymentMethodStats();
     }
 }
